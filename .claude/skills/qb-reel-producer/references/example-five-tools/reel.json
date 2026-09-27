@@ -1,0 +1,417 @@
+{
+ "title": "five-tools",
+ "source": "assets/media/source.mov",
+ "fps": 30,
+ "lead": 0.05,
+ "emphasis": [
+  "AI",
+  "stack"
+ ],
+ "corrections": [
+  {
+   "from": "Hey, I could",
+   "to": "AI could"
+  }
+ ],
+ "segments": [
+  {
+   "text": "AI could build damn near anything now.",
+   "phrases": [
+    0,
+    1
+   ],
+   "in": 11.9333,
+   "out": 14.5667
+  },
+  {
+   "text": "So why the fuck do I need five different tools?",
+   "phrases": [
+    2
+   ],
+   "in": 14.9667,
+   "out": 18.1
+  },
+  {
+   "text": "Because they don't do the same job.",
+   "phrases": [
+    3
+   ],
+   "in": 19.9667,
+   "out": 22.1667
+  },
+  {
+   "text": "ChatGPT,",
+   "phrases": [
+    4
+   ],
+   "in": 30.8,
+   "out": 32.1333
+  },
+  {
+   "text": "figure out what I'm building.",
+   "phrases": [
+    5
+   ],
+   "in": 32.7,
+   "out": 34.2333
+  },
+  {
+   "text": "Claude Code,",
+   "phrases": [
+    6
+   ],
+   "in": 35.3333,
+   "out": 36.4333
+  },
+  {
+   "text": "build it.",
+   "phrases": [
+    7
+   ],
+   "in": 37.0667,
+   "out": 37.8667
+  },
+  {
+   "text": "Gemini,",
+   "phrases": [
+    8
+   ],
+   "in": 39.4667,
+   "out": 40.3
+  },
+  {
+   "text": "help me see it.",
+   "phrases": [
+    9
+   ],
+   "in": 41.1667,
+   "out": 42.3667
+  },
+  {
+   "text": "Supabase,",
+   "phrases": [
+    10
+   ],
+   "in": 43.7,
+   "out": 44.7667
+  },
+  {
+   "text": "make it remember shit.",
+   "phrases": [
+    11
+   ],
+   "in": 45.6667,
+   "out": 47.0667
+  },
+  {
+   "text": "Netlify,",
+   "phrases": [
+    12
+   ],
+   "in": 48.5667,
+   "out": 49.6667
+  },
+  {
+   "text": "put it online.",
+   "phrases": [
+    13
+   ],
+   "in": 50.9,
+   "out": 52.0
+  },
+  {
+   "text": "That's my stack.",
+   "phrases": [
+    14
+   ],
+   "in": 55.0,
+   "out": 56.1333
+  },
+  {
+   "text": "Five tools,",
+   "phrases": [
+    15
+   ],
+   "in": 56.7667,
+   "out": 57.9333
+  },
+  {
+   "text": "one job.",
+   "phrases": [
+    16
+   ],
+   "in": 58.3667,
+   "out": 59.4
+  },
+  {
+   "text": "Get this shit out my head",
+   "phrases": [
+    17
+   ],
+   "in": 60.1,
+   "out": 61.6333
+  },
+  {
+   "text": "and onto the internet.",
+   "phrases": [
+    18
+   ],
+   "in": 61.8,
+   "out": 63.8667
+  }
+ ],
+ "cues": [
+  {
+   "lines": [
+    {
+     "seg": 0,
+     "text": "*AI* could build damn near anything now."
+    }
+   ]
+  },
+  {
+   "lines": [
+    {
+     "seg": 1,
+     "text": "So why the fuck do I need *five different tools?*"
+    }
+   ]
+  },
+  {
+   "lines": [
+    {
+     "seg": 2,
+     "text": "Because they don't do the same job."
+    }
+   ]
+  },
+  {
+   "lines": [
+    {
+     "seg": 3,
+     "text": "*ChatGPT,*"
+    },
+    {
+     "seg": 4,
+     "text": "figure out what I'm building."
+    }
+   ]
+  },
+  {
+   "lines": [
+    {
+     "seg": 5,
+     "text": "*Claude Code,*"
+    },
+    {
+     "seg": 6,
+     "text": "build it."
+    }
+   ]
+  },
+  {
+   "lines": [
+    {
+     "seg": 7,
+     "text": "*Gemini,*"
+    },
+    {
+     "seg": 8,
+     "text": "help me see it."
+    }
+   ]
+  },
+  {
+   "lines": [
+    {
+     "seg": 9,
+     "text": "*Supabase,*"
+    },
+    {
+     "seg": 10,
+     "text": "make it remember shit."
+    }
+   ]
+  },
+  {
+   "lines": [
+    {
+     "seg": 11,
+     "text": "*Netlify,*"
+    },
+    {
+     "seg": 12,
+     "text": "put it online."
+    }
+   ]
+  },
+  {
+   "lines": [
+    {
+     "seg": 13,
+     "text": "That's my *stack.*"
+    }
+   ]
+  },
+  {
+   "lines": [
+    {
+     "seg": 14,
+     "text": "Five tools,"
+    },
+    {
+     "seg": 15,
+     "text": "*one job.*"
+    }
+   ]
+  },
+  {
+   "lines": [
+    {
+     "seg": 16,
+     "text": "Get this shit out my head"
+    },
+    {
+     "seg": 17,
+     "text": "and onto the internet."
+    }
+   ]
+  }
+ ],
+ "tools": [
+  {
+   "key": "chatgpt",
+   "name": "ChatGPT",
+   "seg": 3,
+   "until_seg": 4,
+   "treatment": "split-left",
+   "visual": {
+    "kind": "mark",
+    "file": "assets/logos/chatgpt.svg",
+    "owner": "official (product owner)",
+    "source": "npm @lobehub/icons-static-svg@1.95.1 icons/openai.svg",
+    "license": "MIT (package); mark is a trademark of its owner, used to identify the product"
+   }
+  },
+  {
+   "key": "claude-code",
+   "name": "Claude Code",
+   "seg": 5,
+   "until_seg": 6,
+   "treatment": "full+pip",
+   "visual": {
+    "kind": "footage",
+    "owner": "official (product owner)",
+    "src": "@lib/tools/claude-code/demo.mp4",
+    "source": "https://github.com/anthropics/claude-code demo.gif @ 7779afb12e36",
+    "license": "Official public product demo; terminal window only; the wallpaper around it is multicoloured and breaks the palette",
+    "start": 0.6,
+    "end": 6.6,
+    "rate": 2.5,
+    "crop": "500:889:2:1",
+    "clip": "assets/media/ins-claude-code.mp4"
+   }
+  },
+  {
+   "key": "gemini",
+   "name": "Gemini",
+   "seg": 7,
+   "until_seg": 8,
+   "treatment": "split-right",
+   "visual": {
+    "kind": "mark",
+    "file": "assets/logos/gemini.svg",
+    "owner": "official (product owner)",
+    "source": "npm simple-icons@16.33.0 icons/googlegemini.svg",
+    "license": "CC0-1.0 (collection); mark is a trademark of its owner, used to identify the product"
+   }
+  },
+  {
+   "key": "supabase",
+   "name": "Supabase",
+   "seg": 9,
+   "until_seg": 10,
+   "treatment": "full",
+   "visual": {
+    "kind": "footage",
+    "owner": "speaker (own recording)",
+    "src": "assets/media/rec-supabase.mp4",
+    "source": "speaker's recording ce2d2c2c-ScreenRecording_09-23-2026_00-46-15_1.mp4",
+    "license": "owned by the speaker",
+    "start": 5.0,
+    "end": 7.9,
+    "crop": "1170:2080:0:127",
+    "review": "check work/broll sheet",
+    "clip": "assets/media/ins-supabase.mp4"
+   }
+  },
+  {
+   "key": "netlify",
+   "name": "Netlify",
+   "seg": 11,
+   "until_seg": 12,
+   "treatment": "full+pip",
+   "visual": {
+    "kind": "footage",
+    "owner": "speaker (own recording)",
+    "src": "assets/media/rec-netlify.mp4",
+    "source": "speaker's recording d728cff4-ScreenRecording_09-23-2026_00-58-52_1.mp4",
+    "license": "owned by the speaker",
+    "start": 7.4,
+    "end": 9.2,
+    "crop": "1170:2080:0:127",
+    "review": "check work/broll sheet",
+    "clip": "assets/media/ins-netlify.mp4"
+   }
+  }
+ ],
+ "recap": {
+  "seg": 13,
+  "line_seg": 15,
+  "until_seg": 15
+ },
+ "framing": {
+  "pivot_y": 400,
+  "caption_top": 1330,
+  "moves": [
+   {
+    "seg": 0,
+    "from": 1.0,
+    "to": 1.035
+   },
+   {
+    "seg": 1,
+    "from": 1.12,
+    "to": 1.14
+   },
+   {
+    "seg": 2,
+    "from": 1.02,
+    "to": 1.04
+   },
+   {
+    "seg": 16,
+    "from": 1.13,
+    "to": 1.15
+   },
+   {
+    "seg": 17,
+    "from": 1.04,
+    "to": 1.1
+   }
+  ]
+ },
+ "audio": {
+  "voice_lufs": -15,
+  "music": {
+   "kind": "synth",
+   "lufs": -31
+  },
+  "sfx": {
+   "full": "whoosh",
+   "split": "click",
+   "recap": "pop"
+  }
+ },
+ "font": "Space Grotesk"
+}

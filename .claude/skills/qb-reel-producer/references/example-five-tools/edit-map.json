@@ -1,0 +1,54 @@
+{
+ "duration": 26.033,
+ "tools": [
+  {
+   "tool": "ChatGPT",
+   "spoken_at_reel": 7.85,
+   "spoken_at_source": 30.85,
+   "visual_in": 7.8,
+   "visual_out": 10.666,
+   "format": "split-left",
+   "visual": "chatgpt-openai.svg"
+  },
+  {
+   "tool": "Claude Code",
+   "spoken_at_reel": 10.716,
+   "spoken_at_source": 35.38,
+   "visual_in": 10.666,
+   "visual_out": 12.566,
+   "format": "full+pip",
+   "visual": "ins-claude-code.mp4"
+  },
+  {
+   "tool": "Gemini",
+   "spoken_at_reel": 12.617,
+   "spoken_at_source": 39.52,
+   "visual_in": 12.566,
+   "visual_out": 14.566,
+   "format": "split-right",
+   "visual": "googlegemini.svg"
+  },
+  {
+   "tool": "Supabase",
+   "spoken_at_reel": 14.616,
+   "spoken_at_source": 43.75,
+   "visual_in": 14.566,
+   "visual_out": 17.033,
+   "format": "full",
+   "visual": "ins-supabase.mp4"
+  },
+  {
+   "tool": "Netlify",
+   "spoken_at_reel": 17.083,
+   "spoken_at_source": 48.65,
+   "visual_in": 17.033,
+   "visual_out": 19.267,
+   "format": "full+pip",
+   "visual": "ins-netlify.mp4"
+  }
+ ],
+ "recap": {
+  "in": 19.267,
+  "out": 22.5
+ }
+}

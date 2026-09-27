@@ -1,0 +1,50 @@
+1
+00:00:00,000 --> 00:00:02,433
+AI could build damn near anything now.
+
+2
+00:00:02,433 --> 00:00:05,567
+So why the fuck do I need five different tools?
+
+3
+00:00:05,567 --> 00:00:07,800
+Because they don't do the same job.
+
+4
+00:00:07,800 --> 00:00:10,666
+ChatGPT,
+figure out what I'm building.
+
+5
+00:00:10,666 --> 00:00:12,566
+Claude Code,
+build it.
+
+6
+00:00:12,566 --> 00:00:14,566
+Gemini,
+help me see it.
+
+7
+00:00:14,566 --> 00:00:17,033
+Supabase,
+make it remember shit.
+
+8
+00:00:17,033 --> 00:00:19,267
+Netlify,
+put it online.
+
+9
+00:00:19,267 --> 00:00:20,300
+That's my stack.
+
+10
+00:00:20,300 --> 00:00:22,500
+Five tools,
+one job.
+
+11
+00:00:22,500 --> 00:00:26,033
+Get this shit out my head
+and onto the internet.
