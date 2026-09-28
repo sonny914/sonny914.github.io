@@ -1,0 +1,97 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=1920, height=1080" />
+    <!-- GSAP is vendored locally so renders never depend on a CDN. -->
+    <script src="assets/vendor/gsap-3.14.2.min.js"></script>
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+      html,
+      body {
+        margin: 0;
+        overflow: hidden;
+        background: #0b0a09;
+      }
+      #root {
+        width: 100%;
+        height: 100%;
+        position: relative;
+        background: #0b0a09;
+        font-family: ui-sans-serif, system-ui, sans-serif;
+      }
+      #mark {
+        position: absolute;
+        inset: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+      #mark svg {
+        display: block;
+        width: 520px;
+        height: 520px;
+      }
+      #mark .line {
+        fill: none;
+        stroke: #e8dcc2;
+        stroke-width: 1.5;
+        stroke-linecap: round;
+      }
+      #mark .dim {
+        stroke-opacity: 0.55;
+      }
+      #wordmark {
+        position: absolute;
+        left: 96px;
+        bottom: 88px;
+        display: block;
+        width: 800px;
+        color: #f4f1e9;
+        font-size: 56px;
+        font-weight: 500;
+        letter-spacing: -0.01em;
+      }
+    </style>
+  </head>
+  <body>
+    <div
+      id="root"
+      data-composition-id="main"
+      data-start="0"
+      data-duration="6"
+      data-width="1920"
+      data-height="1080"
+    >
+      <div id="mark" class="clip" data-start="0" data-duration="6" data-track-index="0">
+        <svg viewBox="0 0 520 520" aria-hidden="true">
+          <circle id="outline" class="line" cx="260" cy="260" r="240" />
+          <ellipse id="meridian-a" class="line dim" cx="260" cy="260" rx="80" ry="240" />
+          <ellipse id="meridian-b" class="line dim" cx="260" cy="260" rx="170" ry="240" />
+          <line id="equator" class="line dim" x1="20" y1="260" x2="500" y2="260" />
+        </svg>
+      </div>
+      <h1 id="wordmark" class="clip" data-start="0" data-duration="6" data-track-index="1">Quiet Bands</h1>
+    </div>
+    <script>
+      const tl = gsap.timeline({ paused: true });
+      // Line draw: dash = the shape's real length, offset runs from length to 0.
+      const draw = (sel, duration, at) => {
+        const el = document.querySelector(sel);
+        const len = el.getTotalLength();
+        tl.fromTo(el, { attr: { "stroke-dasharray": len, "stroke-dashoffset": len } }, { attr: { "stroke-dashoffset": 0 }, duration, ease: "power2.inOut" }, at);
+      };
+      draw("#outline", 1.6, 0);
+      draw("#meridian-b", 1.2, 0.5);
+      draw("#meridian-a", 1.2, 0.7);
+      draw("#equator", 0.9, 0.9);
+      tl.fromTo("#wordmark", { opacity: 0 }, { opacity: 1, duration: 0.6, ease: "power3.out" }, 1.9);
+      window.__timelines["main"] = tl;
+      tl.seek(0);
+    </script>
+  </body>
+</html>

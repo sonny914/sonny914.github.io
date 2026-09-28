@@ -1,0 +1,38 @@
+[
+ {
+  "at": 12.0,
+  "parakeet": "",
+  "whisper": "What?",
+  "op": "insert"
+ },
+ {
+  "at": 15.28,
+  "parakeet": "why",
+  "whisper": "what",
+  "op": "replace"
+ },
+ {
+  "at": 46.0,
+  "parakeet": "it",
+  "whisper": "you",
+  "op": "replace"
+ },
+ {
+  "at": 55.52,
+  "parakeet": "stack.",
+  "whisper": "state.",
+  "op": "replace"
+ },
+ {
+  "at": 60.32,
+  "parakeet": "this",
+  "whisper": "the",
+  "op": "replace"
+ },
+ {
+  "at": 62.0,
+  "parakeet": "onto",
+  "whisper": "all to",
+  "op": "replace"
+ }
+]
