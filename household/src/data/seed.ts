@@ -129,8 +129,8 @@ export function buildSeed(today: Date): HouseholdSnapshot {
         confirmation: { state: 'confirmed' },
       },
       {
-        id: 'e-fallon-shift-6', title: 'Work shift', category: 'work',
-        start: d(6, 10), end: d(6, 18),
+        id: 'e-fallon-shift-7', title: 'Work shift', category: 'work',
+        start: d(7, 10), end: d(7, 18),
         participantIds: ['fallon'], responsibleAdultIds: ['fallon'],
         confirmation: { state: 'not_required' }, sourceScheduleId: 'sch-fallon-1',
       },
@@ -147,13 +147,13 @@ export function buildSeed(today: Date): HouseholdSnapshot {
         id: 'cov-pickup-today', title: 'Kenzli pickup at 3:30 PM', kind: 'pickup',
         start: d(0, 15, 30), end: d(0, 15, 55), forMemberIds: ['kenzli'],
         eventId: 'e-kenzli-pickup-0', status: 'open',
-        reason: 'Adult 3 is picking up Khodi at 3:15. Jay is at work until 4:30.',
+        reason: 'Adult 3 is collecting Khodi at 3:15.',
       },
       {
         id: 'cov-inservice', title: 'Kenzli needs care all day', kind: 'care',
         start: d(7, 0), allDay: true, forMemberIds: ['kenzli'],
         eventId: 'e-inservice', status: 'open',
-        reason: 'Daycare is closed. Fallon works 10 to 6.',
+        reason: 'Daycare is closed for a teacher in-service.',
       },
     ],
 

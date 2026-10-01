@@ -60,6 +60,12 @@ export function responsibleNames(ids: MemberId[], members: HouseholdMember[]): s
 
 // ---- Needs attention --------------------------------------------------------
 
+export interface CoverageWindow {
+  start: Date;
+  end: Date;
+  allDay: boolean;
+}
+
 export type AttentionKind = 'coverage' | 'confirmation' | 'overdue';
 
 export interface AttentionItem {
@@ -73,6 +79,8 @@ export interface AttentionItem {
   at: Date;
   allDay: boolean;
   memberIds: MemberId[];
+  /** Coverage items only: the time someone has to be there. */
+  window?: CoverageWindow;
 }
 
 // A child with nobody to collect them outranks a late chore.
@@ -100,6 +108,7 @@ export function attentionItems(
       at: start,
       allDay: !!c.allDay,
       memberIds: c.forMemberIds,
+      window: { start, end: c.end ? parseLocal(c.end) : start, allDay: !!c.allDay },
     });
   }
 
@@ -171,4 +180,55 @@ export function nextUp(events: HouseholdEvent[], now: Date): { event: HouseholdE
     if (status === 'now' || status === 'later') return { event, status };
   }
   return undefined;
+}
+
+// ---- Who can cover? ----------------------------------------------------------
+
+export interface Busy {
+  kind: 'work' | 'event';
+  title: string;
+  until: Date;
+}
+
+/**
+ * Adults tied up during a coverage window. A timed window counts any timed event
+ * an adult is responsible for. An all-day window only counts work shifts, since
+ * a dentist visit does not stop someone covering a day of care.
+ */
+export function busyAdults(
+  window: CoverageWindow,
+  events: HouseholdEvent[],
+  adultIds: MemberId[],
+): Record<MemberId, Busy> {
+  const from = window.allDay ? startOfDay(window.start) : window.start;
+  const to = window.allDay ? addDays(from, 1) : window.end;
+  const busy: Record<MemberId, Busy> = {};
+  for (const e of events) {
+    if (e.allDay) continue;
+    if (window.allDay && e.category !== 'work') continue;
+    const start = parseLocal(e.start);
+    const end = e.end ? parseLocal(e.end) : start;
+    if (!(start < to && end > from)) continue;
+    for (const id of e.responsibleAdultIds) {
+      if (!adultIds.includes(id)) continue;
+      const prev = busy[id];
+      if (!prev || end > prev.until) busy[id] = { kind: e.category === 'work' ? 'work' : 'event', title: e.title, until: end };
+    }
+  }
+  return busy;
+}
+
+export function coverageAvailability(
+  window: CoverageWindow,
+  events: HouseholdEvent[],
+  adultIds: MemberId[],
+  viewerId: MemberId,
+): { viewerBusy?: Busy; others: MemberId[] } {
+  const busy = busyAdults(window, events, adultIds);
+  return { viewerBusy: busy[viewerId], others: adultIds.filter((id) => id !== viewerId && !busy[id]) };
+}
+
+/** Overdue means the mail was missed yesterday as well, not just unchecked today. */
+export function mailOverdue(checkedAt: Date, now: Date): boolean {
+  return dayDiff(now, checkedAt) >= 2;
 }

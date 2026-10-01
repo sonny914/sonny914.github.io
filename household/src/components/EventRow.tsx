@@ -41,7 +41,7 @@ export function EventRow({
   const marker = live ? 'Now' : isNext && !live ? 'Up next' : '';
 
   return (
-    <li className="row" data-quiet={quiet || undefined} data-variant={variant} data-status={live ? 'now' : done ? 'done' : 'later'} data-next={isNext || undefined}>
+    <li className="row" data-quiet={quiet || undefined} data-unassigned={(resp.length === 0 && !done) || undefined} data-variant={variant} data-status={live ? 'now' : done ? 'done' : 'later'} data-next={isNext || undefined}>
       <div className="row__time">
         <span className="row__start">{event.allDay ? 'All day' : formatTime(start)}</span>
         {variant === 'today' && !event.allDay && end && <span className="row__end">{formatTime(end)}</span>}

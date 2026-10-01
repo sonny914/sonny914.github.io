@@ -52,14 +52,13 @@ export function HomeScreen({
 
   const summary = (
     <>
-      <p className="masthead__date">{formatLongDate(now)}</p>
-      <p>
-        {view.todayAll.length} on the schedule
+      <p className="masthead__date">
+        {formatLongDate(now)}
         {' · '}
         {view.attentionAll > 0 ? (
           <a href="#attention">{view.attentionAll} {view.attentionAll === 1 ? 'needs' : 'need'} attention</a>
         ) : (
-          'everything is covered'
+          <span className="masthead__calm">everything is covered</span>
         )}
       </p>
       {next && (
@@ -79,6 +78,9 @@ export function HomeScreen({
         <div className="board-layout__primary">
           <NeedsAttention
             items={view.attention}
+            members={data.members}
+            events={data.events}
+            viewingAs={chrome.viewingAs}
             today={now}
             filterName={filterName}
             viewingAsName={me?.name ?? 'you'}

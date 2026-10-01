@@ -1,6 +1,6 @@
 import type { HouseholdMember, MailCheck } from '../data/types';
 import { formatWhen, parseLocal } from '../lib/dates';
-import { mailNeedsCheck } from '../lib/schedule';
+import { mailNeedsCheck, mailOverdue } from '../lib/schedule';
 import { Avatar } from './Avatar';
 import { CheckIcon, MailIcon } from './Icons';
 
@@ -22,6 +22,7 @@ export function MailCard({
 }) {
   const checkedAt = parseLocal(mail.checkedAt);
   const needs = mailNeedsCheck(checkedAt, now);
+  const overdue = needs && mailOverdue(checkedAt, now);
   const lastBy = members.find((m) => m.id === mail.checkedBy);
 
   return (
@@ -38,7 +39,7 @@ export function MailCard({
       </div>
       {needs ? (
         <div className="mail__action">
-          <button type="button" className="btn btn-primary" onClick={onCheck}>Mark as checked</button>
+          <button type="button" className={`btn ${overdue ? 'btn-primary' : 'btn-quiet'}`} onClick={onCheck}>Mark as checked</button>
           {viewingAs && <p className="mail__as">Saved as {viewingAs.name}</p>}
         </div>
       ) : (

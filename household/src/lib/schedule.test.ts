@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { buildSeed } from '../data/seed';
-import { attentionItems, eventStatus, eventsOnDay, mailNeedsCheck, nextUp, upcomingByDay } from './schedule';
+import { attentionItems, busyAdults, coverageAvailability, eventStatus, eventsOnDay, mailNeedsCheck, mailOverdue, nextUp, upcomingByDay } from './schedule';
 import { parseLocal, toLocal } from './dates';
 
 // Thursday 1 Oct 2026, 2:00 PM local.
@@ -98,5 +98,39 @@ describe('next up', () => {
   it('is undefined once the day is over', () => {
     const late = new Date(2026, 9, 1, 23, 0);
     expect(nextUp(eventsOnDay(data.events, late, 'all'), late)).toBeUndefined();
+  });
+});
+
+describe('who can cover', () => {
+  const adults = ['jay', 'fallon', 'adult3'];
+  const pickup = attentionItems(data, now, 'all').find((i) => i.id === 'cov-pickup-today')!;
+  const inservice = attentionItems(data, now, 'all').find((i) => i.id === 'cov-inservice')!;
+
+  it('finds that nobody is free for the 3:30 pickup', () => {
+    const busy = busyAdults(pickup.window!, data.events, adults);
+    expect(busy.jay).toMatchObject({ kind: 'work' });
+    expect(busy.fallon).toMatchObject({ kind: 'work' });
+    expect(busy.adult3).toMatchObject({ kind: 'event', title: 'Pick up Khodi from school' });
+  });
+
+  it('tells the viewer when they are at work and until when', () => {
+    const a = coverageAvailability(pickup.window!, data.events, adults, 'jay');
+    expect(a.viewerBusy?.kind).toBe('work');
+    expect(a.viewerBusy && toLocal(a.viewerBusy.until)).toBe('2026-10-01T16:30');
+    expect(a.others).toEqual([]);
+  });
+
+  it('on an all-day need, only shifts count and the other adults are free', () => {
+    const a = coverageAvailability(inservice.window!, data.events, adults, 'jay');
+    expect(a.viewerBusy).toBeUndefined();
+    expect(a.others).toEqual(['adult3']);
+  });
+});
+
+describe('mail overdue', () => {
+  it('is overdue only after a day was missed', () => {
+    expect(mailOverdue(new Date(2026, 9, 1, 8, 0), now)).toBe(false);
+    expect(mailOverdue(new Date(2026, 8, 30, 17, 40), now)).toBe(false);
+    expect(mailOverdue(new Date(2026, 8, 29, 17, 40), now)).toBe(true);
   });
 });

@@ -34,12 +34,12 @@ describe('The Cottage home', () => {
     render(<App />);
     const attention = screen.getByRole('region', { name: /needs attention/i });
     const before = Number(within(attention).getByText(/^\s*·?\s*\d+$/).textContent?.replace(/\D/g, ''));
-    fireEvent.click(within(attention).getByRole('button', { name: /I’ll cover: Kenzli pickup/i }));
+    fireEvent.click(within(attention).getByRole('button', { name: /(I’ll cover|Cover anyway): Kenzli pickup/i }));
     expect(within(attention).queryByRole('button', { name: /Kenzli pickup/i })).not.toBeInTheDocument();
     expect(within(attention).getByRole('status')).toHaveTextContent(/Jay will cover/);
     expect(Number(within(attention).getByText(/^\s*·?\s*\d+$/).textContent?.replace(/\D/g, ''))).toBe(before - 1);
     fireEvent.click(within(attention).getByRole('button', { name: /undo/i }));
-    expect(within(attention).getByRole('button', { name: /I’ll cover: Kenzli pickup/i })).toBeInTheDocument();
+    expect(within(attention).getByRole('button', { name: /(I’ll cover|Cover anyway): Kenzli pickup/i })).toBeInTheDocument();
     expect(Number(within(attention).getByText(/^\s*·?\s*\d+$/).textContent?.replace(/\D/g, ''))).toBe(before);
   });
 
@@ -67,5 +67,27 @@ describe('The Cottage home', () => {
 
     fireEvent.click(within(screen.getByRole('navigation', { name: /main/i })).getByRole('button', { name: /calendar/i }));
     expect(screen.getByRole('heading', { level: 1, name: 'Calendar' })).toBeInTheDocument();
+  });
+});
+
+describe('Pickup clarity', () => {
+  it('tells the viewer they are at work and relabels the action instead of offering a plain "I\u2019ll cover"', () => {
+    render(<App />);
+    const attention = screen.getByRole('region', { name: /needs attention/i });
+    expect(within(attention).getByText(/You’re at work until 4:30 PM\. No one else is free\./)).toBeInTheDocument();
+    expect(within(attention).getByRole('button', { name: /Cover anyway: Kenzli pickup/i })).toBeInTheDocument();
+  });
+
+  it('shows who is free on a day that someone really can cover', () => {
+    render(<App />);
+    fireEvent.click(screen.getByRole('button', { name: /show \d+ more/i }));
+    const attention = screen.getByRole('region', { name: /needs attention/i });
+    expect(within(attention).getByText(/You’re free then\. Also free: Adult 3\./)).toBeInTheDocument();
+    expect(within(attention).getByRole('button', { name: /I’ll cover: Kenzli needs care/i })).toBeInTheDocument();
+  });
+
+  it('keeps the mail button quiet until a day has been missed', () => {
+    render(<App />);
+    expect(screen.getByRole('button', { name: /mark as checked/i }).className).toContain('btn-quiet');
   });
 });
