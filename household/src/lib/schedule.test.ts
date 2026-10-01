@@ -34,8 +34,8 @@ describe('today and upcoming', () => {
     const khodi = eventsOnDay(data.events, now, 'khodi');
     expect(khodi.length).toBeGreaterThan(0);
     expect(khodi.every((e) => e.participantIds.includes('khodi') || e.responsibleAdultIds.includes('khodi'))).toBe(true);
-    const adult3 = eventsOnDay(data.events, now, 'adult3').map((e) => e.id);
-    expect(adult3).toContain('e-khodi-pickup-0');
+    const breeze = eventsOnDay(data.events, now, 'adult3').map((e) => e.id);
+    expect(breeze).toContain('e-khodi-pickup-0');
   });
 
   it('classifies event status against the clock', () => {

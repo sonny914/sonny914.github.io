@@ -19,11 +19,11 @@ describe('The Cottage home', () => {
   it('attributes the mail check to whoever is viewing, and can undo it', () => {
     render(<App />);
     fireEvent.change(screen.getByLabelText(/viewing as/i), { target: { value: 'adult3' } });
-    expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent('Adult 3');
+    expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent('Breeze');
 
     fireEvent.click(screen.getByRole('button', { name: /mark as checked/i }));
     const mail = screen.getByRole('region', { name: /mail is checked/i });
-    expect(within(mail).getByText('Adult 3')).toBeInTheDocument();
+    expect(within(mail).getByText('Breeze')).toBeInTheDocument();
 
     fireEvent.click(within(mail).getByRole('button', { name: /undo/i }));
     expect(screen.getByRole('heading', { name: /mail needs to be checked/i })).toBeInTheDocument();
@@ -46,7 +46,7 @@ describe('The Cottage home', () => {
   it('filters the day by household member', () => {
     render(<App />);
     const filters = screen.getByRole('group', { name: /show schedule for/i });
-    for (const name of ['Everyone', 'Jay', 'Fallon', 'Adult 3', 'Khodi', 'Kenzli']) {
+    for (const name of ['Everyone', 'Jay', 'Fallon', 'Breeze', 'Khodi', 'Kenzli']) {
       expect(within(filters).getByRole('button', { name })).toBeInTheDocument();
     }
     fireEvent.click(within(filters).getByRole('button', { name: 'Khodi' }));
@@ -82,7 +82,7 @@ describe('Pickup clarity', () => {
     render(<App />);
     fireEvent.click(screen.getByRole('button', { name: /show \d+ more/i }));
     const attention = screen.getByRole('region', { name: /needs attention/i });
-    expect(within(attention).getByText(/You’re free then\. Also free: Adult 3\./)).toBeInTheDocument();
+    expect(within(attention).getByText(/You’re free then\. Also free: Breeze\./)).toBeInTheDocument();
     expect(within(attention).getByRole('button', { name: /I’ll cover: Kenzli needs care/i })).toBeInTheDocument();
   });
 

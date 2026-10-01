@@ -147,7 +147,7 @@ export function buildSeed(today: Date): HouseholdSnapshot {
         id: 'cov-pickup-today', title: 'Kenzli pickup at 3:30 PM', kind: 'pickup',
         start: d(0, 15, 30), end: d(0, 15, 55), forMemberIds: ['kenzli'],
         eventId: 'e-kenzli-pickup-0', status: 'open',
-        reason: 'Adult 3 is collecting Khodi at 3:15.',
+        reason: 'Breeze is collecting Khodi at 3:15.',
       },
       {
         id: 'cov-inservice', title: 'Kenzli needs care all day', kind: 'care',

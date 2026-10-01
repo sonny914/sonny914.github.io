@@ -38,6 +38,7 @@ export function EventRow({
   const everyone = event.participantIds.length >= members.length - 1 && resp.length > 0;
   const needsConfirm = event.confirmation.state === 'pending' && !done;
   const quiet = event.category === 'work';
+  const Title = variant === 'today' ? 'h3' : 'h4';
   const marker = live ? 'Now' : isNext && !live ? 'Up next' : '';
 
   return (
@@ -48,7 +49,7 @@ export function EventRow({
       </div>
       <div className="row__body">
         {marker && <p className="row__marker">{marker}</p>}
-        <h4 className="row__title">{event.title}</h4>
+        <Title className="row__title">{event.title}</Title>
         <p className="row__meta" hidden={quiet}>
           <span className="row__cat">{CATEGORY_LABELS[event.category]}</span>
           {variant === 'upcoming' && end && !event.allDay && ` · until ${formatTime(end)}`}

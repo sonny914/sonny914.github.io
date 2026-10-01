@@ -1,11 +1,11 @@
 import type { HouseholdMember, MemberId } from '../data/types';
 
-export function Avatar({ member, size = 22 }: { member: HouseholdMember; size?: number }) {
+export function Avatar({ member, size = 24 }: { member: HouseholdMember; size?: number }) {
   return (
     <span
       className="avatar"
       data-color={member.color}
-      style={{ width: size, height: size, fontSize: Math.round(size * 0.5) }}
+      style={{ width: size, height: size, fontSize: size >= 28 ? 14 : 12 }}
       aria-hidden="true"
     >
       {member.initial}

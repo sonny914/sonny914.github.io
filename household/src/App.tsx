@@ -82,7 +82,7 @@ export default function App() {
           chrome={chrome}
           title="Household"
           intro="People, routines and recurring reminders."
-          coming={['Profiles for the adults, Khodi and Kenzli (rename Adult 3 here)', 'Recurring reminders like the mail', 'Uploaded work schedules']}
+          coming={['Profiles for the adults, Khodi and Kenzli (names are editable here)', 'Recurring reminders like the mail', 'Uploaded work schedules']}
         />
       )}
       <AddSheet open={addOpen} onClose={closeAdd} />

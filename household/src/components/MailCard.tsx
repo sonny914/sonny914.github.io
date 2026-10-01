@@ -31,7 +31,7 @@ export function MailCard({
       <div className="mail__text">
         <h2 id="mail-h" className="mail__title">{needs ? 'Mail needs to be checked' : 'Mail is checked'}</h2>
         <p className="mail__last" aria-live="polite">
-          {lastBy && <Avatar member={lastBy} size={20} />}
+          {lastBy && <Avatar member={lastBy} size={24} />}
           <span>
             Last checked by <strong>{lastBy?.name ?? 'someone'}</strong> · {formatWhen(checkedAt, now)}
           </span>

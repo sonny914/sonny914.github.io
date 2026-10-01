@@ -1,6 +1,6 @@
 # The Cottage (slice 1)
 
-Private, phone-first coordination for one home: three adults (Jay, Fallon, Adult 3) and two children (Khodi, Kenzli).
+Private, phone-first coordination for one home: three adults (Jay, Fallon, Breeze) and two children (Khodi, Kenzli).
 Slice 1 is the app shell and the Home day board. **Mock data only**: no auth, database, integrations, OCR, calendar sync or notifications.
 
 ## Run
@@ -17,7 +17,7 @@ Also: `npm run typecheck`, `npm run lint`, `npm test`, `npm run build`.
 ## Structure
 
 - `src/data/types.ts` domain model (members, events, confirmation, coverage requests, reminders, uploaded schedules)
-- `src/data/members.ts` the five profiles. **Rename Adult 3 via `ADULT_3_NAME`.** Avatar initials are explicit (Kenzli is "D", for Ducki)
+- `src/data/members.ts` the five profiles. Names and avatar initials are explicit (Kenzli is "D", for Ducki; Breeze is "B"). Breeze's id is still `adult3` so saved demo state keeps working
 - `src/data/seed.ts` sample household, generated relative to today
 - `src/data/demoState.ts` pure overlay of what people changed in the demo (cover, confirm, done, mail, and their undos)
 - `src/data/repository.ts` the only seam to storage; persists the overlay. Swap for a database here
