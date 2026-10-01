@@ -16,6 +16,7 @@ npm run build      # typecheck + production build into dist/
 
 ## Layout
 
+- `src/data/demoState.ts` pure overlay of what people changed in the demo (cover, confirm, done, mail); `repository.ts` persists it
 - `src/data/types.ts` domain model (members, events, confirmation, coverage requests, reminders, uploaded schedules)
 - `src/data/members.ts` the five profiles; **rename Adult 3 via `ADULT_3_NAME`**
 - `src/data/seed.ts` sample household, generated relative to today

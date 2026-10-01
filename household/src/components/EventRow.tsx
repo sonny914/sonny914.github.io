@@ -1,85 +1,80 @@
 import type { HouseholdEvent, HouseholdMember } from '../data/types';
+import { CATEGORY_LABELS } from '../data/members';
 import { formatTime, parseLocal } from '../lib/dates';
-import { type EventStatus, isLongBlock, responsibleNames } from '../lib/schedule';
-import { AvatarStack } from './Avatar';
-import { CategoryTag } from './CategoryTag';
-import { AlertIcon, CheckIcon, PinIcon } from './Icons';
+import { type EventStatus, isLongBlock } from '../lib/schedule';
+import { Person, lookup } from './Avatar';
+import { AlertIcon } from './Icons';
 
 function sameSet(a: string[], b: string[]) {
   return a.length === b.length && a.every((x) => b.includes(x));
 }
 
+/**
+ * One line of the day board: time, then what, where, and who. No boxes.
+ * Only things that need a person use colour (brick); everything else is ink.
+ */
 export function EventRow({
   event,
   members,
   status,
   isNext = false,
-  showTime = true,
+  variant = 'today',
 }: {
   event: HouseholdEvent;
   members: HouseholdMember[];
   status?: EventStatus;
   isNext?: boolean;
-  showTime?: boolean;
+  variant?: 'today' | 'upcoming';
 }) {
   const start = parseLocal(event.start);
   const end = event.end ? parseLocal(event.end) : undefined;
-  const timeLabel = event.allDay ? 'All day' : formatTime(start);
-  const timeSub = !event.allDay && end ? `to ${formatTime(end)}` : '';
-  const resp = event.responsibleAdultIds;
-  const selfOwned = sameSet(resp, event.participantIds);
-  const participantNames = responsibleNames(event.participantIds, members).join(', ');
   const done = status === 'done';
-  // Long blocks (shifts, daycare) are context; only short events get the "now" spotlight.
+  // Shifts and daycare are context, not moments to react to.
   const live = status === 'now' && !isLongBlock(event);
+  const resp = event.responsibleAdultIds;
+  const forWho = lookup(event.participantIds, members);
+  const owners = lookup(resp, members);
+  const selfOwned = sameSet(resp, event.participantIds);
+  const everyone = event.participantIds.length >= members.length - 1 && resp.length > 0;
   const needsConfirm = event.confirmation.state === 'pending' && !done;
+  const marker = live ? 'Now' : isNext && !live ? 'Up next' : '';
 
   return (
-    <li className="event" data-category={event.category} data-status={live ? 'now' : status === 'now' ? 'later' : status} data-next={isNext || undefined}>
-      {showTime && (
-        <div className="event-time">
-          <span className="event-time-main">{timeLabel}</span>
-          {timeSub && <span className="event-time-sub">{timeSub}</span>}
-        </div>
-      )}
-      <div className="event-card">
-        <div className="event-head">
-          <CategoryTag category={event.category} />
-          {live && <span className="flag flag-now">Happening now</span>}
-          {isNext && !live && <span className="flag flag-now">Up next</span>}
-          {status === 'done' && (
-            <span className="flag flag-done">
-              <CheckIcon size={14} /> Done
-            </span>
-          )}
-        </div>
-        <h4 className="event-title">{event.title}</h4>
-        {event.location && !done && (
-          <p className="event-meta">
-            <PinIcon size={15} /> {event.location}
-          </p>
-        )}
+    <li className="row" data-variant={variant} data-status={live ? 'now' : done ? 'done' : 'later'} data-next={isNext || undefined}>
+      <div className="row__time">
+        <span className="row__start">{event.allDay ? 'All day' : formatTime(start)}</span>
+        {variant === 'today' && !event.allDay && end && <span className="row__end">{formatTime(end)}</span>}
+      </div>
+      <div className="row__body">
+        {marker && <p className="row__marker">{marker}</p>}
+        <h4 className="row__title">{event.title}</h4>
+        <p className="row__meta">
+          <span className="row__cat">{CATEGORY_LABELS[event.category]}</span>
+          {variant === 'upcoming' && end && !event.allDay && ` · until ${formatTime(end)}`}
+          {event.location && !done && ` · ${event.location}`}
+        </p>
         {!done && (
-        <div className="who">
-          {event.participantIds.length > 0 && (
-            <span className="who-for">
-              <AvatarStack ids={event.participantIds} members={members} />
-              <span>{participantNames}</span>
-            </span>
-          )}
-          {resp.length === 0 ? (
-            <span className="flag flag-warn">
-              <AlertIcon size={14} /> No one assigned
-            </span>
-          ) : (
-            !selfOwned && <span className="who-resp">{responsibleNames(resp, members).join(' & ')} responsible</span>
-          )}
-          {needsConfirm && (
-            <span className="flag flag-warn">
-              <AlertIcon size={14} /> Needs confirming
-            </span>
-          )}
-        </div>
+          <p className="row__people">
+            {everyone ? (
+              <span className="person">Everyone</span>
+            ) : (
+              <>
+                {forWho.map((m) => <Person key={m.id} member={m} />)}
+                {owners.length > 0 && !selfOwned && (
+                  <span className="row__with">
+                    {forWho.length > 0 ? 'with' : 'led by'}
+                    {owners.map((m) => <Person key={m.id} member={m} />)}
+                  </span>
+                )}
+              </>
+            )}
+            {resp.length === 0 && (
+              <span className="alert-text"><AlertIcon size={15} /> No one assigned</span>
+            )}
+            {needsConfirm && (
+              <span className="alert-text"><AlertIcon size={15} /> Unconfirmed</span>
+            )}
+          </p>
         )}
       </div>
     </li>

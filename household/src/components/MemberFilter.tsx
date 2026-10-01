@@ -13,20 +13,19 @@ export function MemberFilter({
 }) {
   return (
     <div className="filter-bar">
-      <div className="filter" role="group" aria-label="Show events for">
-        <button type="button" className="chip" aria-pressed={value === 'all'} onClick={() => onChange('all')}>
+      <div className="filter" role="group" aria-label="Show schedule for">
+        <button type="button" className="tab" aria-pressed={value === 'all'} onClick={() => onChange('all')}>
           Everyone
         </button>
         {members.map((m) => (
           <button
             key={m.id}
             type="button"
-            className="chip"
-            data-color={m.color}
+            className="tab"
             aria-pressed={value === m.id}
             onClick={() => onChange(value === m.id ? 'all' : m.id)}
           >
-            <Avatar member={m} size={24} />
+            <Avatar member={m} size={20} />
             {m.name}
           </button>
         ))}

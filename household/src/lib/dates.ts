@@ -53,6 +53,15 @@ export function formatDayHeading(d: Date, today: Date): string {
   return `${weekday} · ${short}`;
 }
 
+/** Heading parts for a day group: "Tomorrow" + "Fri, Oct 2". */
+export function dayParts(d: Date, today: Date): { label: string; date: string } {
+  const diff = dayDiff(d, today);
+  return {
+    label: diff === 1 ? 'Tomorrow' : d.toLocaleDateString('en-US', { weekday: 'long' }),
+    date: d.toLocaleDateString('en-US', diff === 1 ? { weekday: 'short', month: 'short', day: 'numeric' } : { month: 'short', day: 'numeric' }),
+  };
+}
+
 /** "Today" / "Yesterday" / "Tomorrow" / "Mon". */
 export function formatDay(d: Date, today: Date): string {
   const diff = dayDiff(d, today);

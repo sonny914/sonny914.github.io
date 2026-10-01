@@ -1,67 +1,51 @@
-import { useState } from 'react';
-import type { HouseholdMember, MailCheck, MemberId } from '../data/types';
+import type { HouseholdMember, MailCheck } from '../data/types';
 import { formatWhen, parseLocal } from '../lib/dates';
 import { mailNeedsCheck } from '../lib/schedule';
 import { Avatar } from './Avatar';
 import { CheckIcon, MailIcon } from './Icons';
 
+/** The physical mailbox: a ruled strip, not a card. Attribution follows "Viewing as". */
 export function MailCard({
   mail,
-  adults,
+  members,
+  viewingAs,
   now,
   onCheck,
   onUndo,
 }: {
   mail: MailCheck;
-  adults: HouseholdMember[];
+  members: HouseholdMember[];
+  viewingAs: HouseholdMember | undefined;
   now: Date;
-  onCheck: (by: MemberId) => void;
+  onCheck: () => void;
   onUndo: () => void;
 }) {
-  // Demo stand-in for "who is signed in" until real accounts exist.
-  const [actingId, setActingId] = useState<MemberId>(adults[0]?.id ?? '');
   const checkedAt = parseLocal(mail.checkedAt);
   const needs = mailNeedsCheck(checkedAt, now);
-  const lastBy = adults.find((m) => m.id === mail.checkedBy);
+  const lastBy = members.find((m) => m.id === mail.checkedBy);
 
   return (
-    <section className="section" aria-labelledby="mail-h">
-      <div className="mail" data-state={needs ? 'needs' : 'done'}>
-        <div className="mail-top">
-          <span className="mail-icon">{needs ? <MailIcon size={24} /> : <CheckIcon size={24} />}</span>
-          <div>
-            <h2 id="mail-h" className="mail-title">{needs ? 'Mail needs to be checked' : 'Mail is checked'}</h2>
-            <p className="mail-last" aria-live="polite">
-              {lastBy && <Avatar member={lastBy} size={20} />}
-              <span>
-                Last checked by <strong>{lastBy?.name ?? 'someone'}</strong>
-                {' · '}
-                {formatWhen(checkedAt, now)}
-              </span>
-            </p>
-          </div>
-        </div>
-        {needs ? (
-          <div className="mail-actions">
-            <button type="button" className="btn btn-primary" onClick={() => onCheck(actingId)}>
-              Mark as checked
-            </button>
-            <label className="mail-as">
-              <span>As</span>
-              <select value={actingId} onChange={(e) => setActingId(e.target.value)}>
-                {adults.map((m) => (
-                  <option key={m.id} value={m.id}>{m.name}</option>
-                ))}
-              </select>
-            </label>
-          </div>
-        ) : (
-          <div className="mail-actions">
-            <p className="mail-note">Nothing more to do today.</p>
-            <button type="button" className="btn btn-quiet" onClick={onUndo}>Undo</button>
-          </div>
-        )}
+    <section className="mail" data-state={needs ? 'needs' : 'done'} aria-labelledby="mail-h">
+      <span className="mail__icon">{needs ? <MailIcon size={22} /> : <CheckIcon size={22} />}</span>
+      <div className="mail__text">
+        <h2 id="mail-h" className="mail__title">{needs ? 'Mail needs to be checked' : 'Mail is checked'}</h2>
+        <p className="mail__last" aria-live="polite">
+          {lastBy && <Avatar member={lastBy} size={20} />}
+          <span>
+            Last checked by <strong>{lastBy?.name ?? 'someone'}</strong> · {formatWhen(checkedAt, now)}
+          </span>
+        </p>
       </div>
+      {needs ? (
+        <div className="mail__action">
+          <button type="button" className="btn btn-primary" onClick={onCheck}>Mark as checked</button>
+          {viewingAs && <p className="mail__as">Saved as {viewingAs.name}</p>}
+        </div>
+      ) : (
+        <div className="mail__action">
+          <button type="button" className="link-btn" onClick={onUndo}>Undo</button>
+        </div>
+      )}
     </section>
   );
 }

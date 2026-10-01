@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react';
-import { CalendarIcon, CoverageIcon, HomeIcon, HouseholdIcon } from './Icons';
+import { CalendarIcon, CoverageIcon, HomeIcon, HouseholdIcon, PlusIcon } from './Icons';
 
 export type TabId = 'home' | 'calendar' | 'coverage' | 'household';
 
@@ -10,23 +10,43 @@ const TABS: { id: TabId; label: string; icon: ReactNode }[] = [
   { id: 'household', label: 'Household', icon: <HouseholdIcon /> },
 ];
 
-export function BottomNav({ tab, onChange }: { tab: TabId; onChange: (t: TabId) => void }) {
+/**
+ * Phone: fixed bar with Add as a raised centre button, so it never covers content.
+ * Desktop: the same list becomes tabs under the masthead (Add moves to the masthead).
+ */
+export function BottomNav({
+  tab,
+  onChange,
+  onAdd,
+  attentionCount,
+}: {
+  tab: TabId;
+  onChange: (t: TabId) => void;
+  onAdd: () => void;
+  attentionCount: number;
+}) {
+  const item = (t: (typeof TABS)[number]) => (
+    <li key={t.id} className="nav__item" data-tab={t.id}>
+      <button type="button" className="nav__btn" aria-current={tab === t.id ? 'page' : undefined} onClick={() => onChange(t.id)}>
+        <span className="nav__icon">
+          {t.icon}
+          {t.id === 'home' && attentionCount > 0 && <span className="nav__dot" role="img" aria-label={`${attentionCount} need attention`} />}
+        </span>
+        <span className="nav__label">{t.label}</span>
+      </button>
+    </li>
+  );
   return (
-    <nav className="bottom-nav" aria-label="Main">
+    <nav className="nav" aria-label="Main">
       <ul>
-        {TABS.map((t) => (
-          <li key={t.id}>
-            <button
-              type="button"
-              className="nav-btn"
-              aria-current={tab === t.id ? 'page' : undefined}
-              onClick={() => onChange(t.id)}
-            >
-              {t.icon}
-              <span>{t.label}</span>
-            </button>
-          </li>
-        ))}
+        {TABS.slice(0, 2).map(item)}
+        <li className="nav__item nav__item--add">
+          <button type="button" className="nav__add" onClick={onAdd} aria-haspopup="dialog">
+            <PlusIcon size={26} />
+            <span className="visually-hidden">Add</span>
+          </button>
+        </li>
+        {TABS.slice(2).map(item)}
       </ul>
     </nav>
   );

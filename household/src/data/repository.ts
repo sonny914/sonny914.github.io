@@ -1,53 +1,58 @@
 import { buildSeed } from './seed';
-import type { HouseholdSnapshot, MailCheck, MemberId } from './types';
+import {
+  type DemoState,
+  EMPTY_DEMO_STATE,
+  applyDemoState,
+  claimCoverage,
+  completeTask,
+  confirmEvent,
+  setMail,
+} from './demoState';
+import type { HouseholdSnapshot, MemberId } from './types';
 import { toLocal } from '../lib/dates';
 
 /**
  * The seam between the UI and wherever household data lives.
- * Slice 1 implements it with in-memory seed data plus localStorage for the few
- * things that visibly change. A database-backed version replaces this file
- * (and will make the methods async); components only see the interface.
+ * Slice 1 implements it with seed data plus a small localStorage overlay of
+ * what people changed. A database-backed version replaces this file (and will
+ * make the methods async); components only see the interface.
  */
 export interface HouseholdRepository {
   getSnapshot(now: Date): HouseholdSnapshot;
-  markMailChecked(by: MemberId, now: Date): MailCheck;
+  claimCoverage(requestId: string, by: MemberId): void;
+  confirmEvent(eventId: string): void;
+  completeTask(taskId: string, by: MemberId, now: Date): void;
+  markMailChecked(by: MemberId, now: Date): void;
   /** Restores the previous mail state (demo "Undo"). */
-  resetMailCheck(now: Date): MailCheck;
+  resetMailCheck(): void;
 }
 
-const MAIL_KEY = 'cottage.demo.mailCheck.v1';
+const KEY = 'cottage.demo.v1';
 
-function readStored<T>(key: string): T | undefined {
+function load(): DemoState {
   try {
-    const raw = window.localStorage.getItem(key);
-    return raw ? (JSON.parse(raw) as T) : undefined;
+    const raw = window.localStorage.getItem(KEY);
+    return raw ? { ...EMPTY_DEMO_STATE, ...(JSON.parse(raw) as Partial<DemoState>) } : EMPTY_DEMO_STATE;
   } catch {
-    return undefined;
+    return EMPTY_DEMO_STATE;
   }
 }
 
-function writeStored(key: string, value: unknown | undefined) {
+function save(s: DemoState) {
   try {
-    if (value === undefined) window.localStorage.removeItem(key);
-    else window.localStorage.setItem(key, JSON.stringify(value));
+    window.localStorage.setItem(KEY, JSON.stringify(s));
   } catch {
-    /* storage unavailable (private mode): demo state just won't persist */
+    /* storage unavailable (private mode): the demo just won't persist */
   }
 }
+
+const update = (fn: (s: DemoState) => DemoState) => save(fn(load()));
 
 export const localDemoRepository: HouseholdRepository = {
-  getSnapshot(now) {
-    const seed = buildSeed(now);
-    const mail = readStored<MailCheck>(MAIL_KEY);
-    return mail ? { ...seed, mailCheck: mail } : seed;
-  },
-  markMailChecked(by, now) {
-    const next: MailCheck = { checkedBy: by, checkedAt: toLocal(now) };
-    writeStored(MAIL_KEY, next);
-    return next;
-  },
-  resetMailCheck(now) {
-    writeStored(MAIL_KEY, undefined);
-    return buildSeed(now).mailCheck;
-  },
+  getSnapshot: (now) => applyDemoState(buildSeed(now), load()),
+  claimCoverage: (id, by) => update((s) => claimCoverage(s, id, by)),
+  confirmEvent: (id) => update((s) => confirmEvent(s, id)),
+  completeTask: (id, by, now) => update((s) => completeTask(s, id, by, toLocal(now))),
+  markMailChecked: (by, now) => update((s) => setMail(s, { checkedBy: by, checkedAt: toLocal(now) })),
+  resetMailCheck: () => update((s) => setMail(s, undefined)),
 };

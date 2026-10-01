@@ -61,3 +61,6 @@ export const PinIcon = (p: IconProps) => (
 export const ListIcon = (p: IconProps) => (
   <Svg {...p}><path d="M9 7h10M9 12h10M9 17h10M5 7h.01M5 12h.01M5 17h.01" /></Svg>
 );
+export const ChevronDownIcon = (p: IconProps) => (
+  <Svg {...p}><path d="m6 9.5 6 6 6-6" /></Svg>
+);

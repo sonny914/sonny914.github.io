@@ -64,6 +64,8 @@ export type AttentionKind = 'coverage' | 'confirmation' | 'overdue';
 
 export interface AttentionItem {
   id: string;
+  /** Id of the coverage request, event or reminder an action on this item changes. */
+  sourceId: string;
   kind: AttentionKind;
   title: string;
   detail: string;
@@ -91,6 +93,7 @@ export function attentionItems(
     if (over) continue;
     items.push({
       id: c.id,
+      sourceId: c.id,
       kind: 'coverage',
       title: c.title,
       detail: c.reason ?? 'Nobody is assigned yet.',
@@ -107,6 +110,7 @@ export function attentionItems(
     if (e.confirmation.assignedTo) ids.push(e.confirmation.assignedTo);
     items.push({
       id: `confirm-${e.id}`,
+      sourceId: e.id,
       kind: 'confirmation',
       title: e.title,
       detail: e.confirmation.prompt ?? 'Needs confirming.',
@@ -123,6 +127,7 @@ export function attentionItems(
     const daysLate = Math.max(1, dayDiff(today, due));
     items.push({
       id: r.id,
+      sourceId: r.id,
       kind: 'overdue',
       title: r.title,
       detail: `Was due ${daysLate === 1 ? 'yesterday' : `${daysLate} days ago`}.`,

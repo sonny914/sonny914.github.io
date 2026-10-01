@@ -2,61 +2,94 @@ import { useMemo, useState } from 'react';
 import { MailCard } from '../components/MailCard';
 import { MemberFilter } from '../components/MemberFilter';
 import { NeedsAttention } from '../components/NeedsAttention';
+import { type Chrome, Shell } from '../components/Shell';
 import { TodayTimeline } from '../components/TodayTimeline';
 import { UpcomingList } from '../components/UpcomingList';
-import type { HouseholdSnapshot, MemberId } from '../data/types';
+import type { HouseholdSnapshot } from '../data/types';
 import { formatLongDate, formatTime, greeting, parseLocal } from '../lib/dates';
-import { type MemberFilter as Filter, attentionItems, eventsOnDay, nextUp, upcomingByDay } from '../lib/schedule';
+import {
+  type AttentionItem,
+  type MemberFilter as Filter,
+  attentionItems,
+  eventsOnDay,
+  nextUp,
+  upcomingByDay,
+} from '../lib/schedule';
+
+export interface HomeActions {
+  onAttentionAct: (item: AttentionItem) => void;
+  onMailCheck: () => void;
+  onMailUndo: () => void;
+}
 
 export function HomeScreen({
   data,
   now,
-  onMailCheck,
-  onMailUndo,
+  chrome,
+  actions,
 }: {
   data: HouseholdSnapshot;
   now: Date;
-  onMailCheck: (by: MemberId) => void;
-  onMailUndo: () => void;
+  chrome: Chrome;
+  actions: HomeActions;
 }) {
   const [filter, setFilter] = useState<Filter>('all');
-  const adults = useMemo(() => data.members.filter((m) => m.role === 'adult'), [data.members]);
+  const me = data.members.find((m) => m.id === chrome.viewingAs);
   const filterName = data.members.find((m) => m.id === filter)?.name;
 
-  const today = useMemo(() => eventsOnDay(data.events, now, filter), [data.events, now, filter]);
-  const upcoming = useMemo(() => upcomingByDay(data.events, now, filter), [data.events, now, filter]);
-  const attention = useMemo(() => attentionItems(data, now, filter), [data, now, filter]);
-  const next = nextUp(today, now);
+  const view = useMemo(() => {
+    const todayAll = eventsOnDay(data.events, now, 'all');
+    return {
+      todayAll,
+      attentionAll: attentionItems(data, now, 'all').length,
+      today: eventsOnDay(data.events, now, filter),
+      upcoming: upcomingByDay(data.events, now, filter),
+      attention: attentionItems(data, now, filter),
+    };
+  }, [data, now, filter]);
+  const next = nextUp(view.todayAll, now);
+
+  const summary = (
+    <>
+      <p className="masthead__date">{formatLongDate(now)}</p>
+      <p>
+        {view.todayAll.length} on the schedule
+        {' · '}
+        {view.attentionAll > 0 ? (
+          <a href="#attention">{view.attentionAll} need{view.attentionAll === 1 ? 's' : ''} a decision</a>
+        ) : (
+          'everything is covered'
+        )}
+      </p>
+      {next && (
+        <p className="masthead__next">
+          <strong>{next.status === 'now' ? 'Now' : `Next, ${formatTime(parseLocal(next.event.start))}`}</strong> {next.event.title}
+        </p>
+      )}
+    </>
+  );
 
   return (
-    <main className="screen" id="main">
-      <header className="home-head">
-        <p className="home-greeting">{greeting(now)}</p>
-        <h1 className="home-title">The Cottage</h1>
-        <p className="home-date">{formatLongDate(now)}</p>
-        <p className="home-status">
-          {next ? (
-            <span>
-              <strong>{next.status === 'now' ? 'Now' : 'Next'}:</strong> {next.event.title}
-              {next.status === 'later' && ` at ${formatTime(parseLocal(next.event.start))}`}
-            </span>
-          ) : (
-            <span>Nothing else scheduled today.</span>
-          )}
-          {attention.length > 0 && (
-            <a className="home-status-attn" href="#attn-h">
-              {attention.length} need{attention.length === 1 ? 's' : ''} attention
-            </a>
-          )}
-        </p>
-      </header>
-
-      <MemberFilter members={data.members} value={filter} onChange={setFilter} />
-
-      <NeedsAttention items={attention} members={data.members} today={now} filterName={filterName} />
-      <MailCard mail={data.mailCheck} adults={adults} now={now} onCheck={onMailCheck} onUndo={onMailUndo} />
-      <TodayTimeline events={today} members={data.members} now={now} filterName={filterName} />
-      <UpcomingList groups={upcoming} members={data.members} today={now} filterName={filterName} />
-    </main>
+    <Shell chrome={chrome} eyebrow="The Cottage" heading={`${greeting(now)}, ${me?.name ?? 'there'}.`} summary={summary}>
+      <div className="board-layout">
+        <div className="board-layout__filter">
+          <MemberFilter members={data.members} value={filter} onChange={setFilter} />
+        </div>
+        <div className="board-layout__primary">
+          <NeedsAttention
+            items={view.attention}
+            today={now}
+            filterName={filterName}
+            viewingAsName={me?.name ?? 'you'}
+            onAct={actions.onAttentionAct}
+          />
+          <TodayTimeline events={view.today} members={data.members} now={now} filterName={filterName} />
+        </div>
+        <div className="board-layout__secondary">
+          <MailCard mail={data.mailCheck} members={data.members} viewingAs={me} now={now} onCheck={actions.onMailCheck} onUndo={actions.onMailUndo} />
+          <UpcomingList groups={view.upcoming} members={data.members} today={now} filterName={filterName} />
+        </div>
+      </div>
+    </Shell>
   );
 }

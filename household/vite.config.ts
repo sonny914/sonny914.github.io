@@ -5,5 +5,5 @@ export default defineConfig({
   plugins: [react()],
   // Relative base so the build works from any sub-path.
   base: './',
-  test: { environment: 'node', include: ['src/**/*.test.ts'] },
+  test: { environment: 'node', include: ['src/**/*.test.{ts,tsx}'] },
 });
