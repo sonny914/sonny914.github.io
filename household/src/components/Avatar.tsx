@@ -8,7 +8,7 @@ export function Avatar({ member, size = 28 }: { member: HouseholdMember; size?: 
       style={{ width: size, height: size, fontSize: size * 0.46 }}
       aria-hidden="true"
     >
-      {member.name.trim().charAt(0).toUpperCase()}
+      {member.initial}
     </span>
   );
 }

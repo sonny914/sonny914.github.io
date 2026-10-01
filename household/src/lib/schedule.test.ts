@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { buildSeed } from '../data/seed';
-import { attentionItems, eventStatus, eventsOnDay, mailNeedsCheck, upcomingByDay } from './schedule';
+import { attentionItems, eventStatus, eventsOnDay, mailNeedsCheck, nextUp, upcomingByDay } from './schedule';
 import { parseLocal, toLocal } from './dates';
 
 // Thursday 1 Oct 2026, 2:00 PM local.
@@ -53,9 +53,9 @@ describe('needs attention', () => {
     expect(kinds).toEqual(new Set(['coverage', 'confirmation', 'overdue']));
   });
 
-  it('puts overdue first, then coverage, then confirmations', () => {
+  it('puts coverage first, then confirmations, then overdue', () => {
     const kinds = attentionItems(data, now, 'all').map((i) => i.kind);
-    const rank = { overdue: 0, coverage: 1, confirmation: 2 } as const;
+    const rank = { coverage: 0, confirmation: 1, overdue: 2 } as const;
     expect([...kinds].sort((a, b) => rank[a] - rank[b])).toEqual(kinds);
   });
 
@@ -85,5 +85,18 @@ describe('mail', () => {
   it('needs a check until someone has checked it today', () => {
     expect(mailNeedsCheck(parseLocal(data.mailCheck.checkedAt), now)).toBe(true);
     expect(mailNeedsCheck(new Date(2026, 9, 1, 9, 0), now)).toBe(false);
+  });
+});
+
+describe('next up', () => {
+  it('skips shifts and finished events', () => {
+    const next = nextUp(eventsOnDay(data.events, now, 'all'), now);
+    expect(next?.event.id).toBe('e-khodi-pickup-0');
+    expect(next?.status).toBe('later');
+  });
+
+  it('is undefined once the day is over', () => {
+    const late = new Date(2026, 9, 1, 23, 0);
+    expect(nextUp(eventsOnDay(data.events, late, 'all'), late)).toBeUndefined();
   });
 });

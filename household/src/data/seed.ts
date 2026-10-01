@@ -16,7 +16,7 @@ export function buildSeed(today: Date): HouseholdSnapshot {
     events: [
       // ---- Today ----
       {
-        id: 'e-jay-shift-0', title: 'Jay · work shift', category: 'work',
+        id: 'e-jay-shift-0', title: 'Work shift', category: 'work',
         start: d(0, 8), end: d(0, 16, 30),
         participantIds: ['jay'], responsibleAdultIds: ['jay'],
         confirmation: { state: 'not_required' }, sourceScheduleId: 'sch-jay-1',
@@ -34,7 +34,7 @@ export function buildSeed(today: Date): HouseholdSnapshot {
         confirmation: { state: 'confirmed' },
       },
       {
-        id: 'e-fallon-shift-0', title: 'Fallon · work shift', category: 'work',
+        id: 'e-fallon-shift-0', title: 'Work shift', category: 'work',
         start: d(0, 11), end: d(0, 19),
         participantIds: ['fallon'], responsibleAdultIds: ['fallon'],
         confirmation: { state: 'not_required' }, sourceScheduleId: 'sch-fallon-1',
@@ -79,13 +79,13 @@ export function buildSeed(today: Date): HouseholdSnapshot {
         confirmation: { state: 'not_required' },
       },
       {
-        id: 'e-jay-shift-1', title: 'Jay · work shift', category: 'work',
+        id: 'e-jay-shift-1', title: 'Work shift', category: 'work',
         start: d(1, 8), end: d(1, 16, 30),
         participantIds: ['jay'], responsibleAdultIds: ['jay'],
         confirmation: { state: 'not_required' }, sourceScheduleId: 'sch-jay-1',
       },
       {
-        id: 'e-fallon-shift-1', title: 'Fallon · work shift', category: 'work',
+        id: 'e-fallon-shift-1', title: 'Work shift', category: 'work',
         start: d(1, 7), end: d(1, 15),
         participantIds: ['fallon'], responsibleAdultIds: ['fallon'],
         confirmation: { state: 'not_required' }, sourceScheduleId: 'sch-fallon-1',
@@ -129,7 +129,7 @@ export function buildSeed(today: Date): HouseholdSnapshot {
         confirmation: { state: 'confirmed' },
       },
       {
-        id: 'e-fallon-shift-6', title: 'Fallon · work shift', category: 'work',
+        id: 'e-fallon-shift-6', title: 'Work shift', category: 'work',
         start: d(6, 10), end: d(6, 18),
         participantIds: ['fallon'], responsibleAdultIds: ['fallon'],
         confirmation: { state: 'not_required' }, sourceScheduleId: 'sch-fallon-1',

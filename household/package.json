@@ -1,9 +1,9 @@
 {
-  "name": "household",
+  "name": "cottage",
   "version": "0.1.0",
   "private": true,
   "type": "module",
-  "description": "Private, mobile-first household coordination app. Slice 1: app shell and dashboard (mock data only).",
+  "description": "The Cottage: private, mobile-first household coordination app. Slice 1: app shell and dashboard (mock data only).",
   "scripts": {
     "dev": "vite --host",
     "build": "tsc --noEmit && vite build",

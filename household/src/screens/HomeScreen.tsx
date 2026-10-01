@@ -5,8 +5,8 @@ import { NeedsAttention } from '../components/NeedsAttention';
 import { TodayTimeline } from '../components/TodayTimeline';
 import { UpcomingList } from '../components/UpcomingList';
 import type { HouseholdSnapshot, MemberId } from '../data/types';
-import { formatLongDate, greeting } from '../lib/dates';
-import { type MemberFilter as Filter, attentionItems, eventsOnDay, upcomingByDay } from '../lib/schedule';
+import { formatLongDate, formatTime, greeting, parseLocal } from '../lib/dates';
+import { type MemberFilter as Filter, attentionItems, eventsOnDay, nextUp, upcomingByDay } from '../lib/schedule';
 
 export function HomeScreen({
   data,
@@ -26,13 +26,29 @@ export function HomeScreen({
   const today = useMemo(() => eventsOnDay(data.events, now, filter), [data.events, now, filter]);
   const upcoming = useMemo(() => upcomingByDay(data.events, now, filter), [data.events, now, filter]);
   const attention = useMemo(() => attentionItems(data, now, filter), [data, now, filter]);
+  const next = nextUp(today, now);
 
   return (
     <main className="screen" id="main">
       <header className="home-head">
         <p className="home-greeting">{greeting(now)}</p>
-        <h1 className="home-title">Our home today</h1>
+        <h1 className="home-title">The Cottage</h1>
         <p className="home-date">{formatLongDate(now)}</p>
+        <p className="home-status">
+          {next ? (
+            <span>
+              <strong>{next.status === 'now' ? 'Now' : 'Next'}:</strong> {next.event.title}
+              {next.status === 'later' && ` at ${formatTime(parseLocal(next.event.start))}`}
+            </span>
+          ) : (
+            <span>Nothing else scheduled today.</span>
+          )}
+          {attention.length > 0 && (
+            <a className="home-status-attn" href="#attn-h">
+              {attention.length} need{attention.length === 1 ? 's' : ''} attention
+            </a>
+          )}
+        </p>
       </header>
 
       <MemberFilter members={data.members} value={filter} onChange={setFilter} />

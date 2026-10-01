@@ -1,6 +1,6 @@
 import type { HouseholdEvent, HouseholdMember } from '../data/types';
 import { formatTime, parseLocal } from '../lib/dates';
-import { type EventStatus, responsibleNames } from '../lib/schedule';
+import { type EventStatus, isLongBlock, responsibleNames } from '../lib/schedule';
 import { AvatarStack } from './Avatar';
 import { CategoryTag } from './CategoryTag';
 import { AlertIcon, CheckIcon, PinIcon } from './Icons';
@@ -13,11 +13,13 @@ export function EventRow({
   event,
   members,
   status,
+  isNext = false,
   showTime = true,
 }: {
   event: HouseholdEvent;
   members: HouseholdMember[];
   status?: EventStatus;
+  isNext?: boolean;
   showTime?: boolean;
 }) {
   const start = parseLocal(event.start);
@@ -27,10 +29,13 @@ export function EventRow({
   const resp = event.responsibleAdultIds;
   const selfOwned = sameSet(resp, event.participantIds);
   const participantNames = responsibleNames(event.participantIds, members).join(', ');
-  const needsConfirm = event.confirmation.state === 'pending';
+  const done = status === 'done';
+  // Long blocks (shifts, daycare) are context; only short events get the "now" spotlight.
+  const live = status === 'now' && !isLongBlock(event);
+  const needsConfirm = event.confirmation.state === 'pending' && !done;
 
   return (
-    <li className="event" data-category={event.category} data-status={status}>
+    <li className="event" data-category={event.category} data-status={live ? 'now' : status === 'now' ? 'later' : status} data-next={isNext || undefined}>
       {showTime && (
         <div className="event-time">
           <span className="event-time-main">{timeLabel}</span>
@@ -40,7 +45,8 @@ export function EventRow({
       <div className="event-card">
         <div className="event-head">
           <CategoryTag category={event.category} />
-          {status === 'now' && <span className="flag flag-now">Happening now</span>}
+          {live && <span className="flag flag-now">Happening now</span>}
+          {isNext && !live && <span className="flag flag-now">Up next</span>}
           {status === 'done' && (
             <span className="flag flag-done">
               <CheckIcon size={14} /> Done
@@ -48,11 +54,12 @@ export function EventRow({
           )}
         </div>
         <h4 className="event-title">{event.title}</h4>
-        {event.location && (
+        {event.location && !done && (
           <p className="event-meta">
             <PinIcon size={15} /> {event.location}
           </p>
         )}
+        {!done && (
         <div className="who">
           {event.participantIds.length > 0 && (
             <span className="who-for">
@@ -73,6 +80,7 @@ export function EventRow({
             </span>
           )}
         </div>
+        )}
       </div>
     </li>
   );

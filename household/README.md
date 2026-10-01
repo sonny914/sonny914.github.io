@@ -1,4 +1,4 @@
-# Home base — household app (slice 1)
+# The Cottage — household app (slice 1)
 
 Private, phone-first coordination for one home: three adults (Jay, Fallon, Adult 3) and two children (Khodi, Kenzli).
 Slice 1 is the app shell and the Home dashboard. **Mock data only**: no auth, database, integrations, OCR, calendar sync or notifications.

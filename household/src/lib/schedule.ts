@@ -73,7 +73,8 @@ export interface AttentionItem {
   memberIds: MemberId[];
 }
 
-const KIND_RANK: Record<AttentionKind, number> = { overdue: 0, coverage: 1, confirmation: 2 };
+// A child with nobody to collect them outranks a late chore.
+const KIND_RANK: Record<AttentionKind, number> = { coverage: 0, confirmation: 1, overdue: 2 };
 
 export function attentionItems(
   data: HouseholdSnapshot,
@@ -141,4 +142,28 @@ export function attentionItems(
 /** Mail is a daily chore: it needs checking until someone has checked it today. */
 export function mailNeedsCheck(checkedAt: Date, now: Date): boolean {
   return !isSameDay(checkedAt, now);
+}
+
+// ---- What's next -----------------------------------------------------------
+
+/**
+ * The next thing that needs a human: the first timed event that is happening
+ * now or still to come. Shifts and other long blocks (daycare, school day) run
+ * for hours, so they never count as "next".
+ */
+const LONG_BLOCK_MS = 4 * 3_600_000;
+
+/** Shifts, daycare and school days: background context, not moments to react to. */
+export function isLongBlock(e: HouseholdEvent): boolean {
+  if (e.category === 'work') return true;
+  return !!e.end && parseLocal(e.end).getTime() - parseLocal(e.start).getTime() >= LONG_BLOCK_MS;
+}
+
+export function nextUp(events: HouseholdEvent[], now: Date): { event: HouseholdEvent; status: EventStatus } | undefined {
+  for (const event of events) {
+    if (event.allDay || isLongBlock(event)) continue;
+    const status = eventStatus(event, now);
+    if (status === 'now' || status === 'later') return { event, status };
+  }
+  return undefined;
 }

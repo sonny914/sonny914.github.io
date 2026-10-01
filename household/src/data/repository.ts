@@ -15,7 +15,7 @@ export interface HouseholdRepository {
   resetMailCheck(now: Date): MailCheck;
 }
 
-const MAIL_KEY = 'household.demo.mailCheck.v1';
+const MAIL_KEY = 'cottage.demo.mailCheck.v1';
 
 function readStored<T>(key: string): T | undefined {
   try {

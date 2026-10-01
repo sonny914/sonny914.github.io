@@ -1,8 +1,8 @@
 import { useState } from 'react';
 import type { HouseholdMember } from '../data/types';
 import { formatDay, formatWhen } from '../lib/dates';
+import { responsibleNames } from '../lib/schedule';
 import type { AttentionItem, AttentionKind } from '../lib/schedule';
-import { AvatarStack } from './Avatar';
 import { AlertIcon, CheckIcon, ClockIcon, PersonPlusIcon } from './Icons';
 import { EmptyState } from './EmptyState';
 
@@ -50,7 +50,7 @@ export function NeedsAttention({
                   <p className="attn-detail">{item.detail}</p>
                   <p className="attn-when">
                     {item.allDay ? `${formatDay(item.at, today)}, all day` : formatWhen(item.at, today)}
-                    <AvatarStack ids={item.memberIds} members={members} />
+                    <span className="attn-who">{responsibleNames([...new Set(item.memberIds)], members).join(', ')}</span>
                   </p>
                 </div>
               </li>

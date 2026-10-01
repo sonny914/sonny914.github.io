@@ -20,6 +20,8 @@ export interface HouseholdMember {
   id: MemberId;
   /** Display name. Rename here (or via a future profile editor) only. */
   name: string;
+  /** One letter shown in the avatar. Must be unique across the household. */
+  initial: string;
   role: MemberRole;
   color: MemberColor;
   /** Only adults will ever sign in. */
