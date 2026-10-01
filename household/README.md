@@ -23,4 +23,8 @@ npm run build      # typecheck + production build into dist/
 - `src/lib/` date helpers and pure selectors (today, upcoming, needs-attention, mail)
 - `src/components/`, `src/screens/` small UI pieces; Home is functional, other tabs are placeholders
 
+## Deploy (Netlify)
+
+New site from the repo, **Base directory** `household` (the `netlify.toml` here supplies build command, publish dir and Node 22). The site sends `noindex` headers and `robots.txt` disallows crawlers, but the URL itself is public: add Netlify password protection or Identity before putting real household data in.
+
 Only the mail check is persisted (localStorage key `household.demo.mailCheck.v1`). "Undo" on the mail card clears it.
