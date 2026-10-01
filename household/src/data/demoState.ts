@@ -25,6 +25,20 @@ export function confirmEvent(s: DemoState, id: string): DemoState {
   return s.confirmed.includes(id) ? s : { ...s, confirmed: [...s.confirmed, id] };
 }
 
+export function releaseCoverage(s: DemoState, id: string): DemoState {
+  const { [id]: _released, ...rest } = s.coverage;
+  return { ...s, coverage: rest };
+}
+
+export function unconfirmEvent(s: DemoState, id: string): DemoState {
+  return { ...s, confirmed: s.confirmed.filter((x) => x !== id) };
+}
+
+export function reopenTask(s: DemoState, id: string): DemoState {
+  const { [id]: _reopened, ...rest } = s.tasksDone;
+  return { ...s, tasksDone: rest };
+}
+
 export function completeTask(s: DemoState, id: string, by: MemberId, at: LocalDateTime): DemoState {
   return { ...s, tasksDone: { ...s.tasksDone, [id]: { by, at } } };
 }

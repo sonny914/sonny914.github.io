@@ -18,6 +18,7 @@ import {
 
 export interface HomeActions {
   onAttentionAct: (item: AttentionItem) => void;
+  onAttentionUndo: (item: AttentionItem) => void;
   onMailCheck: () => void;
   onMailUndo: () => void;
 }
@@ -56,7 +57,7 @@ export function HomeScreen({
         {view.todayAll.length} on the schedule
         {' · '}
         {view.attentionAll > 0 ? (
-          <a href="#attention">{view.attentionAll} need{view.attentionAll === 1 ? 's' : ''} a decision</a>
+          <a href="#attention">{view.attentionAll} {view.attentionAll === 1 ? 'needs' : 'need'} attention</a>
         ) : (
           'everything is covered'
         )}
@@ -82,6 +83,7 @@ export function HomeScreen({
             filterName={filterName}
             viewingAsName={me?.name ?? 'you'}
             onAct={actions.onAttentionAct}
+            onUndo={actions.onAttentionUndo}
           />
           <TodayTimeline events={view.today} members={data.members} now={now} filterName={filterName} />
         </div>

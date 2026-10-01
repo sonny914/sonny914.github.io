@@ -37,10 +37,11 @@ export function EventRow({
   const selfOwned = sameSet(resp, event.participantIds);
   const everyone = event.participantIds.length >= members.length - 1 && resp.length > 0;
   const needsConfirm = event.confirmation.state === 'pending' && !done;
+  const quiet = event.category === 'work';
   const marker = live ? 'Now' : isNext && !live ? 'Up next' : '';
 
   return (
-    <li className="row" data-variant={variant} data-status={live ? 'now' : done ? 'done' : 'later'} data-next={isNext || undefined}>
+    <li className="row" data-quiet={quiet || undefined} data-variant={variant} data-status={live ? 'now' : done ? 'done' : 'later'} data-next={isNext || undefined}>
       <div className="row__time">
         <span className="row__start">{event.allDay ? 'All day' : formatTime(start)}</span>
         {variant === 'today' && !event.allDay && end && <span className="row__end">{formatTime(end)}</span>}
@@ -48,13 +49,14 @@ export function EventRow({
       <div className="row__body">
         {marker && <p className="row__marker">{marker}</p>}
         <h4 className="row__title">{event.title}</h4>
-        <p className="row__meta">
+        <p className="row__meta" hidden={quiet}>
           <span className="row__cat">{CATEGORY_LABELS[event.category]}</span>
           {variant === 'upcoming' && end && !event.allDay && ` · until ${formatTime(end)}`}
           {event.location && !done && ` · ${event.location}`}
         </p>
         {!done && (
           <p className="row__people">
+            {quiet && <span className="row__cat">{CATEGORY_LABELS[event.category]}</span>}
             {everyone ? (
               <span className="person">Everyone</span>
             ) : (

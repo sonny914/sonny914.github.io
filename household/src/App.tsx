@@ -42,6 +42,12 @@ export default function App() {
       if (item.kind === 'overdue') repo.completeTask(item.sourceId, viewingAs, new Date());
       touch();
     },
+    onAttentionUndo: (item: AttentionItem) => {
+      if (item.kind === 'coverage') repo.releaseCoverage(item.sourceId);
+      if (item.kind === 'confirmation') repo.unconfirmEvent(item.sourceId);
+      if (item.kind === 'overdue') repo.reopenTask(item.sourceId);
+      touch();
+    },
     onMailCheck: () => {
       repo.markMailChecked(viewingAs, new Date());
       touch();

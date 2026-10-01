@@ -38,6 +38,9 @@ describe('The Cottage home', () => {
     expect(within(attention).queryByRole('button', { name: /Kenzli pickup/i })).not.toBeInTheDocument();
     expect(within(attention).getByRole('status')).toHaveTextContent(/Jay will cover/);
     expect(Number(within(attention).getByText(/^\s*·?\s*\d+$/).textContent?.replace(/\D/g, ''))).toBe(before - 1);
+    fireEvent.click(within(attention).getByRole('button', { name: /undo/i }));
+    expect(within(attention).getByRole('button', { name: /I’ll cover: Kenzli pickup/i })).toBeInTheDocument();
+    expect(Number(within(attention).getByText(/^\s*·?\s*\d+$/).textContent?.replace(/\D/g, ''))).toBe(before);
   });
 
   it('filters the day by household member', () => {

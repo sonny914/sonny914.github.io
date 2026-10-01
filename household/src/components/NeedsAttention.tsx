@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { formatDay, formatWhen } from '../lib/dates';
 import type { AttentionItem, AttentionKind } from '../lib/schedule';
 import { AlertIcon, CheckIcon, ClockIcon, PersonPlusIcon } from './Icons';
@@ -9,7 +9,8 @@ const KIND: Record<AttentionKind, { label: string; action: string; Icon: typeof 
   overdue: { label: 'Overdue', action: 'Done', Icon: ClockIcon },
 };
 
-const LIMIT = 3;
+const LIMIT = 2;
+const UNDO_MS = 10_000;
 
 /** The one loud block on the page: everything here needs a person to act. */
 export function NeedsAttention({
@@ -18,26 +19,35 @@ export function NeedsAttention({
   filterName,
   viewingAsName,
   onAct,
+  onUndo,
 }: {
   items: AttentionItem[];
   today: Date;
   filterName?: string;
   viewingAsName: string;
   onAct: (item: AttentionItem) => void;
+  onUndo: (item: AttentionItem) => void;
 }) {
   const [expanded, setExpanded] = useState(false);
-  const [announce, setAnnounce] = useState('');
+  const [last, setLast] = useState<{ item: AttentionItem; message: string } | null>(null);
+  useEffect(() => {
+    if (!last) return;
+    const t = setTimeout(() => setLast(null), UNDO_MS);
+    return () => clearTimeout(t);
+  }, [last]);
   const shown = expanded ? items : items.slice(0, LIMIT);
 
   function act(item: AttentionItem) {
     onAct(item);
-    setAnnounce(
+    setLast({
+      item,
+      message:
       item.kind === 'coverage'
         ? `${viewingAsName} will cover “${item.title}”.`
         : item.kind === 'confirmation'
           ? `“${item.title}” confirmed.`
           : `“${item.title}” marked done.`,
-    );
+    });
   }
 
   return (
@@ -46,11 +56,16 @@ export function NeedsAttention({
         <AlertIcon size={18} /> Needs attention
         {items.length > 0 && <span className="attention__count">{items.length}</span>}
       </h2>
-      <p className="visually-hidden" role="status">{announce}</p>
+      {last && (
+        <p className="attention__undo" role="status">
+          {last.message}
+          <button type="button" className="attention__undo-btn" onClick={() => { onUndo(last.item); setLast(null); }}>Undo</button>
+        </p>
+      )}
       {items.length === 0 ? (
         <p className="attention__clear">
           <strong>{filterName ? `Nothing needs ${filterName}.` : 'Everything is covered.'}</strong>{' '}
-          {announce || 'Open coverage, confirmations and overdue tasks will show up here.'}
+          Open coverage, confirmations and overdue tasks will show up here.
         </p>
       ) : (
         <ul className="attention__list">
@@ -70,7 +85,7 @@ export function NeedsAttention({
                 </div>
                 <button
                   type="button"
-                  className="btn btn-on-brick"
+                  className="btn btn-quiet"
                   aria-label={`${action}: ${item.title}${item.kind === 'coverage' ? `, as ${viewingAsName}` : ''}`}
                   onClick={() => act(item)}
                 >

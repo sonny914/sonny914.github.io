@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { buildSeed } from './seed';
-import { EMPTY_DEMO_STATE, applyDemoState, claimCoverage, completeTask, confirmEvent, setMail } from './demoState';
+import { EMPTY_DEMO_STATE, applyDemoState, claimCoverage, completeTask, confirmEvent, releaseCoverage, reopenTask, setMail, unconfirmEvent } from './demoState';
 import { attentionItems } from '../lib/schedule';
 
 const now = new Date(2026, 9, 1, 14, 0);
@@ -32,5 +32,18 @@ describe('demo state overlay', () => {
     const cleared = setMail(checked, undefined);
     expect(cleared.mail).toBeUndefined();
     expect(cleared.coverage).toEqual({ x: 'jay' });
+  });
+});
+
+describe('undo', () => {
+  it('releases coverage, unconfirms and reopens, restoring the attention items', () => {
+    const before = attentionItems(seed, now, 'all').map((i) => i.id).sort();
+    let s = claimCoverage(EMPTY_DEMO_STATE, 'cov-pickup-today', 'jay');
+    s = confirmEvent(s, 'e-khodi-therapy-confirm');
+    s = completeTask(s, 'r-library', 'jay', '2026-10-01T14:00');
+    s = releaseCoverage(s, 'cov-pickup-today');
+    s = unconfirmEvent(s, 'e-khodi-therapy-confirm');
+    s = reopenTask(s, 'r-library');
+    expect(attentionItems(applyDemoState(seed, s), now, 'all').map((i) => i.id).sort()).toEqual(before);
   });
 });
