@@ -1,4 +1,4 @@
-import type { HouseholdEvent } from '../data/types';
+import type { HouseholdEvent, MemberBirthday } from '../data/types';
 import { addDays, startOfDay, toLocal } from './dates';
 
 /**
@@ -17,8 +17,8 @@ export const PICKUPS: PickupRule[] = [
   { id: 'recycling', label: 'recycling', weekdays: [5] }, // Friday
 ];
 
-/** Month is 1-12. Only birthdays the household has told us. */
-export const BIRTHDAYS: { memberId: string; month: number; day: number }[] = [
+/** Month is 1-12. The birthdays the household has already told us. Anyone else is asked during setup. */
+export const DEFAULT_BIRTHDAYS: MemberBirthday[] = [
   { memberId: 'jay', month: 3, day: 27 },
   { memberId: 'fallon', month: 3, day: 14 },
   { memberId: 'khodi', month: 5, day: 15 },
@@ -58,14 +58,27 @@ export function pickupReminderText(r: PickupReminder): { title: string; detail: 
     : { title: `Today: ${what} pickup`, detail: 'Put it out this morning if it did not go out last night.' };
 }
 
+/** Feb 29 birthdays are kept on Feb 28 in years without one. */
+function celebratedOn(b: MemberBirthday, d: Date): boolean {
+  if (d.getMonth() + 1 !== b.month) return false;
+  if (b.month === 2 && b.day === 29 && new Date(d.getFullYear(), 1, 29).getMonth() !== 1) return d.getDate() === 28;
+  return d.getDate() === b.day;
+}
+
+/** Stored birthdays win over the built-in ones for the same person. */
+export function mergeBirthdays(defaults: MemberBirthday[], stored: MemberBirthday[]): MemberBirthday[] {
+  const byMember = new Map([...defaults, ...stored].map((b) => [b.memberId, b]));
+  return [...byMember.values()];
+}
+
 /** Birthdays within `days` days of today (inclusive), as all-day events. */
-export function birthdayEvents(now: Date, days: number, nameOf: (id: string) => string): HouseholdEvent[] {
+export function birthdayEvents(now: Date, days: number, nameOf: (id: string) => string, birthdays: MemberBirthday[]): HouseholdEvent[] {
   const today = startOfDay(now);
   const out: HouseholdEvent[] = [];
   for (let i = 0; i <= days; i++) {
     const d = addDays(today, i);
     // The twins share a day, so they get one event, not two.
-    const matches = BIRTHDAYS.filter((b) => d.getMonth() + 1 === b.month && d.getDate() === b.day);
+    const matches = birthdays.filter((b) => celebratedOn(b, d));
     if (!matches.length) continue;
     const names = matches.map((b) => nameOf(b.memberId));
     out.push({

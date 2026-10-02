@@ -208,6 +208,13 @@ export interface TrustedContact {
 
 export type SetupStatus = 'done' | 'skipped';
 
+/** Month is 1-12. No year is kept. */
+export interface MemberBirthday {
+  memberId: MemberId;
+  month: number;
+  day: number;
+}
+
 // ---- Whole-household snapshot --------------------------------------------
 
 export interface HouseholdSnapshot {
@@ -224,4 +231,6 @@ export interface HouseholdSnapshot {
   trustedContacts: TrustedContact[];
   /** Per adult: has the schedule step of first-time setup been finished or skipped? */
   setup: Record<MemberId, SetupStatus>;
+  /** Everyone whose birthday is known: the household's starting list plus what adults entered. */
+  birthdays: MemberBirthday[];
 }

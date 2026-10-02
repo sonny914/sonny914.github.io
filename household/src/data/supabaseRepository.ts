@@ -51,7 +51,7 @@ export function createSupabaseRepository(db: DbClient): HouseholdRepository {
     mode: 'shared',
 
     async load(now) {
-      const [work, away, updates, links, contacts, setup, mail] = await Promise.all([
+      const [work, away, updates, links, contacts, setup, mail, birthdays] = await Promise.all([
         rows<WorkRow>(db.from('work_entries').select('id, member_id, start_date, start_time, end_date, end_time, repeat_weekdays, repeat_until, created_by, created_at, updated_by, updated_at').order('start_date')),
         rows<AwayRow>(db.from('unavailable_periods').select('id, member_id, start_at, end_at, all_day, note, created_by, created_at, updated_by, updated_at').order('start_at')),
         rows<UpdateRow>(db.from('child_updates').select('id, type, title, note, at, created_by, created_at, updated_by, updated_at').order('updated_at', { ascending: false })),
@@ -59,6 +59,7 @@ export function createSupabaseRepository(db: DbClient): HouseholdRepository {
         rows<ContactRow>(db.from('trusted_contacts').select('id, name, role, relationship, phone, email, notes, updated_by, updated_at').order('name')),
         rows<{ member_id: string; status: 'done' | 'skipped' }>(db.from('setup_status').select('member_id, status')),
         rows<MailRow>(db.from('mail_checks').select('checked_by, checked_at').order('checked_at', { ascending: false }).limit(1)),
+        rows<{ member_id: string; month: number; day: number }>(db.from('member_birthdays').select('member_id, month, day')),
       ]);
 
       const childrenOf = new Map<string, string[]>();
@@ -72,6 +73,7 @@ export function createSupabaseRepository(db: DbClient): HouseholdRepository {
           unavailable: away.map(awayFromRow),
           childUpdates: updates.map((u) => updateFromRow(u, childrenOf.get(u.id) ?? [])),
           setup: Object.fromEntries(setup.map((s) => [s.member_id, s.status])),
+          birthdays: Object.fromEntries(birthdays.map((b) => [b.member_id, { month: b.month, day: b.day }])),
           mail: mail[0] ? mailFromRow(mail[0]) : undefined,
         },
         now,
@@ -108,6 +110,10 @@ export function createSupabaseRepository(db: DbClient): HouseholdRepository {
 
     async completeSetup(memberId: MemberId, status) {
       ok(await db.from('setup_status').upsert({ member_id: memberId, status }, { onConflict: 'member_id' }));
+    },
+
+    async saveBirthday(memberId: MemberId, month: number, day: number) {
+      ok(await db.from('member_birthdays').upsert({ member_id: memberId, month, day }, { onConflict: 'member_id' }));
     },
 
     async markMailChecked(by) {

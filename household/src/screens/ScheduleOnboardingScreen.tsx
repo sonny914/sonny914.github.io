@@ -1,8 +1,12 @@
 import { useState } from 'react';
 import { ShiftForm } from '../components/ShiftForm';
 import type { HouseholdMember, WorkEntry } from '../data/types';
+import { Field } from '../components/Field';
 import { shiftToEntry } from '../lib/records';
 import { describeWorkEntry } from '../lib/schedules';
+
+const MONTHS = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+const DAYS_IN_MONTH = [31, 29, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];
 
 /** Step two of first-time setup, right after "Who are you?". */
 export function ScheduleOnboardingScreen({
@@ -13,6 +17,8 @@ export function ScheduleOnboardingScreen({
   onFinish,
   onSkip,
   where,
+  askBirthday,
+  onSaveBirthday,
 }: {
   me: HouseholdMember;
   entries: WorkEntry[];
@@ -22,9 +28,31 @@ export function ScheduleOnboardingScreen({
   onSkip: () => Promise<boolean>;
   /** Where saved shifts live, in plain words (demo: this device only; shared: with the other adults). */
   where: string;
+  /** True when the household doesn't know this adult's birthday yet. */
+  askBirthday: boolean;
+  onSaveBirthday: (month: number, day: number) => Promise<boolean>;
 }) {
   const [adding, setAdding] = useState(false);
+  const [month, setMonth] = useState('');
+  const [day, setDay] = useState('');
+  const [bdayError, setBdayError] = useState<string | null>(null);
+  const [bdayBusy, setBdayBusy] = useState(false);
+  const [savedBirthday, setSavedBirthday] = useState<string | null>(null);
   const mine = entries.filter((e) => e.memberId === me.id);
+
+  async function saveBirthday() {
+    const m = Number(month);
+    const d = Number(day);
+    if (!m || !d) return setBdayError('Choose a month and a day.');
+    if (d > DAYS_IN_MONTH[m - 1]!) return setBdayError(`${MONTHS[m - 1]} has at most ${DAYS_IN_MONTH[m - 1]} days.`);
+    setBdayError(null);
+    setBdayBusy(true);
+    try {
+      if (await onSaveBirthday(m, d)) setSavedBirthday(`${MONTHS[m - 1]} ${d}`);
+    } finally {
+      setBdayBusy(false);
+    }
+  }
 
   return (
     <main className="gate" id="main">
@@ -33,6 +61,35 @@ export function ScheduleOnboardingScreen({
       <p className="gate__lead">
         Your shifts show on the day board and tell the household when you can and can’t cover a pickup. You can change them any time from Household.
       </p>
+
+      {askBirthday ? (
+        <section className="birthday-ask" aria-labelledby="bday-h">
+          <h2 id="bday-h" className="birthday-ask__title">When is your birthday?</h2>
+          <p className="birthday-ask__lead">The household sees it on the day board. Month and day only. You can skip this.</p>
+          <div className="birthday-ask__row">
+            <Field label="Birthday month">
+              <select className="input" value={month} onChange={(e) => setMonth(e.target.value)}>
+                <option value="">Month</option>
+                {MONTHS.map((m, i) => (
+                  <option key={m} value={i + 1}>{m}</option>
+                ))}
+              </select>
+            </Field>
+            <Field label="Birthday day">
+              <select className="input" value={day} onChange={(e) => setDay(e.target.value)}>
+                <option value="">Day</option>
+                {Array.from({ length: 31 }, (_, i) => (
+                  <option key={i + 1} value={i + 1}>{i + 1}</option>
+                ))}
+              </select>
+            </Field>
+          </div>
+          {bdayError && <p className="form__error" role="alert">{bdayError}</p>}
+          <button type="button" className="btn btn-quiet" disabled={bdayBusy} onClick={() => void saveBirthday()}>{bdayBusy ? 'Saving…' : 'Save birthday'}</button>
+        </section>
+      ) : (
+        savedBirthday && <p className="gate__note" role="status">Birthday saved: {savedBirthday}.</p>
+      )}
 
       {mine.length > 0 && (
         <ul className="gate__saved" aria-label="Shifts you added">

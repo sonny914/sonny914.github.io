@@ -348,3 +348,9 @@ button { cursor: pointer; }
 .pickup { margin-bottom: 20px; padding: 12px 0; border-top: 1px solid var(--rule); border-bottom: 1px solid var(--rule); }
 .pickup__title { font-size: var(--t-lg); font-weight: 800; line-height: 1.25; }
 .pickup__detail { margin-top: 3px; color: var(--muted); font-size: var(--t-sm); }
+
+/* First-time setup: the birthday question sits above the schedule actions. */
+.birthday-ask { margin-top: 20px; padding: 16px 0; border-top: 1px solid var(--rule); display: grid; gap: 10px; }
+.birthday-ask__title { font-size: var(--t-lg); font-weight: 800; line-height: 1.25; }
+.birthday-ask__lead { color: var(--muted); font-size: var(--t-sm); }
+.birthday-ask__row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }

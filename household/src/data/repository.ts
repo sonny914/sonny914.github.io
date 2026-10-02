@@ -13,6 +13,7 @@ import {
   deleteWorkEntry,
   releaseCoverage,
   reopenTask,
+  saveBirthday,
   saveChildUpdate,
   saveContact,
   saveUnavailable,
@@ -69,6 +70,8 @@ export interface HouseholdRepository {
   deleteChildUpdate(id: string): Promise<void>;
   saveContact(id: string, patch: Partial<TrustedContact>, by: MemberId, now: Date): Promise<void>;
   completeSetup(memberId: MemberId, status: SetupStatus): Promise<void>;
+  /** Your own birthday. Month 1-12; no year is kept. */
+  saveBirthday(memberId: MemberId, month: number, day: number): Promise<void>;
 }
 
 // ---- Demo implementation (this browser only) -----------------------------------
@@ -128,6 +131,7 @@ export const localDemoRepository: HouseholdRepository = {
   deleteChildUpdate: async (id) => update((s) => deleteChildUpdate(s, id)),
   saveContact: async (id, patch, by, now) => update((s) => saveContact(s, id, { ...patch, updatedBy: by, updatedAt: toLocal(now) })),
   completeSetup: async (id, status) => update((s) => completeSetup(s, id, status)),
+  saveBirthday: async (id, month, day) => update((s) => saveBirthday(s, id, month, day)),
   markMailChecked: async (by, now) => update((s) => setMail(s, { checkedBy: by, checkedAt: toLocal(now) })),
   resetMailCheck: async () => update((s) => setMail(s, undefined)),
 };

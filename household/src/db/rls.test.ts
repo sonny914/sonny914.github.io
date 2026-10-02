@@ -236,3 +236,15 @@ describe('migrations', () => {
     expect(rows).toEqual([]);
   });
 });
+
+describe('birthdays', () => {
+  it('everyone reads them, each adult sets only their own, and impossible dates are refused', async () => {
+    await h.breeze.exec(`insert into public.member_birthdays (member_id, month, day) values ('adult3', 8, 2)`);
+    expect(await h.jay.query('select member_id, month, day from public.member_birthdays')).toEqual([{ member_id: 'adult3', month: 8, day: 2 }]);
+    await expect(h.breeze.exec(`insert into public.member_birthdays (member_id, month, day) values ('jay', 3, 27)`)).rejects.toThrow(/row-level security/i);
+    await expect(h.jay.exec(`update public.member_birthdays set month = 1 where member_id = 'adult3'`)).resolves.toBeUndefined();
+    expect(await h.breeze.query('select month from public.member_birthdays')).toEqual([{ month: 8 }]); // Jay's update touched nothing
+    await expect(h.jay.exec(`insert into public.member_birthdays (member_id, month, day) values ('jay', 2, 30)`)).rejects.toThrow(/check/i);
+    await expect(h.anon.query('select * from public.member_birthdays')).rejects.toThrow(/permission denied/i);
+  });
+});

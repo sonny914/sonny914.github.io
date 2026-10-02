@@ -46,7 +46,7 @@ export function HomeScreen({
   const view = useMemo(() => {
     // Birthdays are rules, not records, so they join the board without being stored.
     const nameOf = (id: string) => data.members.find((m) => m.id === id)?.name ?? id;
-    const events = [...data.events, ...birthdayEvents(now, 8, nameOf)];
+    const events = [...data.events, ...birthdayEvents(now, 8, nameOf, data.birthdays)];
     const todayAll = eventsOnDay(events, now, 'all');
     return {
       todayAll,

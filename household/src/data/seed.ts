@@ -192,6 +192,7 @@ export function buildSeed(today: Date): HouseholdSnapshot {
       { id: 'fran', name: 'Fran', role: 'Preferred backup nanny', relationship: 'Their only nanny since birth' },
     ],
     setup: {},
+    birthdays: [],
   };
 }
 
@@ -212,5 +213,6 @@ export function buildEmptyHousehold(): HouseholdSnapshot {
     childUpdates: [],
     trustedContacts: [],
     setup: {},
+    birthdays: [],
   };
 }

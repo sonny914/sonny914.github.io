@@ -3,6 +3,7 @@ import type {
   HouseholdEvent,
   HouseholdSnapshot,
   LocalDateTime,
+  MemberBirthday,
   MailCheck,
   MemberId,
   SetupStatus,
@@ -11,6 +12,7 @@ import type {
   WorkEntry,
 } from './types';
 import { addDays, startOfDay } from '../lib/dates';
+import { DEFAULT_BIRTHDAYS, mergeBirthdays } from '../lib/routines';
 import { expandWorkEntry, normalizeWorkEntry, updateToEvent } from '../lib/schedules';
 
 /**
@@ -32,6 +34,8 @@ export interface DemoState {
   /** Contact details entered by adults, keyed by contact id. */
   contacts: Record<string, Partial<TrustedContact>>;
   setup: Record<MemberId, SetupStatus>;
+  /** Birthdays adults entered, by member. */
+  birthdays: Record<MemberId, { month: number; day: number }>;
 }
 
 export const EMPTY_DEMO_STATE: DemoState = {
@@ -43,6 +47,7 @@ export const EMPTY_DEMO_STATE: DemoState = {
   childUpdates: [],
   contacts: {},
   setup: {},
+  birthdays: {},
 };
 
 function upsert<T extends { id: string }>(list: T[], item: T): T[] {
@@ -61,6 +66,8 @@ export const clearContact = (s: DemoState, id: string): DemoState => {
   return { ...s, contacts: rest };
 };
 export const completeSetup = (s: DemoState, id: MemberId, status: SetupStatus): DemoState => ({ ...s, setup: { ...s.setup, [id]: status } });
+
+export const saveBirthday = (s: DemoState, id: MemberId, month: number, day: number): DemoState => ({ ...s, birthdays: { ...s.birthdays, [id]: { month, day } } });
 
 export function claimCoverage(s: DemoState, id: string, by: MemberId): DemoState {
   return { ...s, coverage: { ...s.coverage, [id]: by } };
@@ -136,5 +143,9 @@ export function applyDemoState(seed: HouseholdSnapshot, s: DemoState, now: Date 
     childUpdates: s.childUpdates,
     trustedContacts: seed.trustedContacts.map((c) => ({ ...c, ...s.contacts[c.id] })),
     setup: s.setup,
+    birthdays: mergeBirthdays(
+      DEFAULT_BIRTHDAYS,
+      Object.entries(s.birthdays).map(([memberId, b]): MemberBirthday => ({ memberId, ...b })),
+    ),
   };
 }

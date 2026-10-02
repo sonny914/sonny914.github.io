@@ -71,6 +71,39 @@ describe('First-time adult setup', () => {
   });
 });
 
+describe('Birthday question in setup', () => {
+  it('asks Breeze for her birthday, not Jay or Fallon whose are known, and keeps it', async () => {
+    const first = render(<App />);
+    await click('Jay');
+    expect(screen.queryByText(/when is your birthday/i)).not.toBeInTheDocument();
+    first.unmount();
+    window.localStorage.clear();
+
+    render(<App />);
+    await click('Breeze');
+    expect(screen.getByRole('heading', { name: /when is your birthday/i })).toBeInTheDocument();
+    await click(/save birthday/i);
+    expect(screen.getByRole('alert')).toHaveTextContent(/choose a month and a day/i);
+    await type('Birthday month', '2');
+    await type('Birthday day', '30');
+    await click(/save birthday/i);
+    expect(screen.getByRole('alert')).toHaveTextContent(/February has at most 29/i);
+    await type('Birthday day', '2');
+    await type('Birthday month', '8');
+    await click(/save birthday/i);
+    expect(screen.getByRole('status')).toHaveTextContent('Birthday saved: August 2.');
+    expect(screen.queryByText(/when is your birthday/i)).not.toBeInTheDocument();
+    expect(JSON.parse(window.localStorage.getItem('cottage.demo.v1')!).birthdays).toEqual({ adult3: { month: 8, day: 2 } });
+  });
+
+  it('shows it on the board in the week before', async () => {
+    window.localStorage.setItem('cottage.demo.viewingAs.v1', 'jay');
+    window.localStorage.setItem('cottage.demo.v1', JSON.stringify({ setup: { jay: 'skipped', fallon: 'skipped', adult3: 'skipped' }, birthdays: { adult3: { month: 10, day: 5 } } }));
+    render(<App />);
+    expect(within(screen.getByRole('region', { name: /next 7 days/i })).getByText('Breeze’s birthday')).toBeInTheDocument();
+  });
+});
+
 describe('Manual work schedule', () => {
   it('validates, saves through onboarding, and Home reflects the shift', async () => {
     render(<App />);

@@ -8,7 +8,10 @@ const seed = buildSeed(now);
 
 describe('demo state overlay', () => {
   it('does not change the seed when nothing was done', () => {
-    expect(applyDemoState(seed, EMPTY_DEMO_STATE)).toEqual(seed);
+    const next = applyDemoState(seed, EMPTY_DEMO_STATE);
+    expect({ ...next, birthdays: [] }).toEqual(seed);
+    // Only the household's starting birthdays are added.
+    expect(next.birthdays.map((b) => b.memberId).sort()).toEqual(['fallon', 'jay', 'kenzli', 'khodi']);
   });
 
   it('claiming coverage removes the item from needs attention and records who', () => {

@@ -159,6 +159,18 @@ describe('Fran, setup and mail across sessions', () => {
   });
 });
 
+describe('birthdays', () => {
+  it('an adult saves their own, everyone sees it, and it joins the built-in ones', async () => {
+    await repoFor('breeze').saveBirthday('adult3', 8, 2);
+    const s = await repoFor('jay').load(now);
+    expect(s.birthdays).toContainEqual({ memberId: 'adult3', month: 8, day: 2 });
+    expect(s.birthdays.map((b) => b.memberId)).toEqual(expect.arrayContaining(['jay', 'fallon', 'khodi', 'kenzli']));
+  });
+  it('cannot set another adult’s birthday', async () => {
+    await expect(repoFor('breeze').saveBirthday('jay', 1, 1)).rejects.toThrow(SaveError);
+  });
+});
+
 describe('failures are reported, never hidden', () => {
   it('a dropped connection says nothing was saved and the entries are still in the form', async () => {
     const r = createSupabaseRepository(pgliteDbClient(h.jay, { failWith: { message: 'TypeError: Failed to fetch' } }));

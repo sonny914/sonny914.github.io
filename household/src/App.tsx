@@ -160,6 +160,8 @@ function Cottage({ services: { repo, auth } }: { services: Services }) {
         entries={data.workEntries}
         now={now}
         where={repo.mode === 'demo' ? 'Saved on this device only until shared saving is set up.' : 'Shifts you save are shared with the other adults.'}
+        askBirthday={!data.birthdays.some((b) => b.memberId === myProfile.id)}
+        onSaveBirthday={(m, d) => commit(null, () => repo.saveBirthday(myProfile.id, m, d))}
         onSave={(e) => commit(savedText('Shift'), () => repo.saveWorkEntry(e))}
         onFinish={() => commit(null, () => repo.completeSetup(myProfile.id, 'done'))}
         onSkip={() => commit(null, () => repo.completeSetup(myProfile.id, 'skipped'))}

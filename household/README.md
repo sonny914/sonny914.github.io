@@ -28,6 +28,7 @@ Do this in a **new, dedicated Supabase project for The Cottage**. Do not reuse a
 2. **Run the migrations**, in order, in the SQL editor (or `supabase db push` with the CLI):
    - `supabase/migrations/20261003000100_cottage_tables.sql`
    - `supabase/migrations/20261003000200_cottage_access.sql`
+   - `supabase/migrations/20261003000300_cottage_birthdays.sql`
 3. **Invite the three adults.** Copy `supabase/invites.example.sql`, replace the three placeholder addresses with their real e-mail addresses, and run it. This table is the whole allow-list: Jay's address becomes `jay`, Fallon's `fallon`, Breeze's `adult3`. No one else can ever get an account, because a database trigger rejects any e-mail address not in it. Nothing in the app can read or edit this table.
 4. **Auth settings** (Authentication in the dashboard):
    - Providers > Email: enabled. Turn **off** "Allow new users to sign up" (belt and braces; the trigger already refuses uninvited addresses).
@@ -53,6 +54,10 @@ Do this in a **new, dedicated Supabase project for The Cottage**. Do not reuse a
 ### Existing records on a device
 
 Records saved by the earlier single-device demo are **never uploaded automatically**. After a person signs in on a device that holds some, a review screen lists them with nothing selected. They choose what to import. Records are saved as added by the signed-in account, only your own schedule can be imported, anything already in the household is skipped (so repeating it is harmless), and Fran's details only fill empty fields. Removing the local copies is a separate, confirmed step. Household > This device > "Review records on this device" reopens it.
+
+### Birthdays and pickups
+
+Trash (Tuesday and Friday) and recycling (Friday) reminders appear on Home from 5 PM the evening before until 10 AM on pickup day. Starting birthdays (Jay, Fallon, Khodi and Kenzli) and the pickup days are rules in `src/lib/routines.ts`. Any adult whose birthday isn't known (today, Breeze) is asked for it, month and day only, during first-time setup, and can skip. Each adult can set only their own.
 
 ### Fran
 
