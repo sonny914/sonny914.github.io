@@ -9,6 +9,9 @@ beforeEach(() => {
   vi.useFakeTimers({ toFake: ['Date'] });
   vi.setSystemTime(new Date(2026, 9, 1, 14, 0));
   window.localStorage.clear();
+  // Existing tests are about Home, so start as returning users who finished setup.
+  window.localStorage.setItem('cottage.demo.viewingAs.v1', 'jay');
+  window.localStorage.setItem('cottage.demo.v1', JSON.stringify({ setup: { jay: 'skipped', fallon: 'skipped', adult3: 'skipped' } }));
 });
 afterEach(() => {
   cleanup();

@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import type { HouseholdEvent, HouseholdMember, MemberId } from '../data/types';
+import type { HouseholdEvent, HouseholdMember, MemberId, UnavailablePeriod } from '../data/types';
 import { useIsNarrow } from '../hooks/useIsNarrow';
 import { formatDay, formatTime, formatWhen } from '../lib/dates';
 import { type AttentionItem, type AttentionKind, coverageAvailability } from '../lib/schedule';
@@ -20,6 +20,7 @@ export function NeedsAttention({
   items,
   members,
   events,
+  unavailable,
   viewingAs,
   today,
   filterName,
@@ -30,12 +31,13 @@ export function NeedsAttention({
   items: AttentionItem[];
   members: HouseholdMember[];
   events: HouseholdEvent[];
+  unavailable: UnavailablePeriod[];
   viewingAs: MemberId;
   today: Date;
   filterName?: string;
   viewingAsName: string;
-  onAct: (item: AttentionItem) => void;
-  onUndo: (item: AttentionItem) => void;
+  onAct: (item: AttentionItem) => boolean;
+  onUndo: (item: AttentionItem) => boolean;
 }) {
   const [expanded, setExpanded] = useState(false);
   const [last, setLast] = useState<{ item: AttentionItem; message: string } | null>(null);
@@ -50,7 +52,7 @@ export function NeedsAttention({
   const nameOf = (id: MemberId) => members.find((m) => m.id === id)?.name ?? 'Someone';
 
   function act(item: AttentionItem) {
-    onAct(item);
+    if (!onAct(item)) return; // the error notice explains; do not offer an Undo for something that did not happen
     setLast({
       item,
       message:
@@ -71,7 +73,7 @@ export function NeedsAttention({
       {last && (
         <p className="attention__undo" role="status">
           {last.message}
-          <button type="button" className="attention__undo-btn" onClick={() => { onUndo(last.item); setLast(null); }}>Undo</button>
+          <button type="button" className="attention__undo-btn" onClick={() => { if (onUndo(last.item)) setLast(null); }}>Undo</button>
         </p>
       )}
       {items.length === 0 ? (
@@ -83,11 +85,11 @@ export function NeedsAttention({
         <ul className="attention__list">
           {shown.map((item) => {
             const { label, action: baseAction, Icon } = KIND[item.kind];
-            const avail = item.kind === 'coverage' && item.window ? coverageAvailability(item.window, events, adultIds, viewingAs) : undefined;
+            const avail = item.kind === 'coverage' && item.window ? coverageAvailability(item.window, events, adultIds, viewingAs, unavailable) : undefined;
             const action = avail?.viewerBusy ? 'Cover anyway' : baseAction;
             const conflict = avail
               ? avail.viewerBusy
-                ? `You’re ${avail.viewerBusy.kind === 'work' ? 'at work' : 'busy'} until ${formatTime(avail.viewerBusy.until)}. ${avail.others.length ? `Free: ${avail.others.map(nameOf).join(', ')}.` : 'No one else is free.'}`
+                ? `You’re ${avail.viewerBusy.kind === 'work' ? 'at work' : avail.viewerBusy.kind === 'unavailable' ? 'unavailable' : 'busy'} until ${formatTime(avail.viewerBusy.until)}. ${avail.others.length ? `Free: ${avail.others.map(nameOf).join(', ')}.` : 'No one else is free.'}`
                 : `You’re free then.${avail.others.length ? ` Also free: ${avail.others.map(nameOf).join(', ')}.` : ''}`
               : undefined;
             return (

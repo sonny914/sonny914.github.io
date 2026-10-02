@@ -17,10 +17,11 @@ import {
 } from '../lib/schedule';
 
 export interface HomeActions {
-  onAttentionAct: (item: AttentionItem) => void;
-  onAttentionUndo: (item: AttentionItem) => void;
-  onMailCheck: () => void;
-  onMailUndo: () => void;
+  onAttentionAct: (item: AttentionItem) => boolean;
+  onAttentionUndo: (item: AttentionItem) => boolean;
+  onMailCheck: () => boolean;
+  onMailUndo: () => boolean;
+  onUpdateSchedule: () => void;
 }
 
 export function HomeScreen({
@@ -80,6 +81,7 @@ export function HomeScreen({
             items={view.attention}
             members={data.members}
             events={data.events}
+            unavailable={data.unavailable}
             viewingAs={chrome.viewingAs}
             today={now}
             filterName={filterName}
@@ -88,6 +90,7 @@ export function HomeScreen({
             onUndo={actions.onAttentionUndo}
           />
           <TodayTimeline events={view.today} members={data.members} now={now} filterName={filterName} />
+          <button type="button" className="link-btn schedule-link" onClick={actions.onUpdateSchedule}>Update my schedule</button>
         </div>
         <div className="board-layout__secondary">
           <MailCard mail={data.mailCheck} members={data.members} viewingAs={me} now={now} onCheck={actions.onMailCheck} onUndo={actions.onMailUndo} />

@@ -27,10 +27,16 @@ export function BottomNav({
 }) {
   const item = (t: (typeof TABS)[number]) => (
     <li key={t.id} className="nav__item" data-tab={t.id}>
-      <button type="button" className="nav__btn" aria-current={tab === t.id ? 'page' : undefined} onClick={() => onChange(t.id)}>
+      <button
+        type="button"
+        className="nav__btn"
+        aria-current={tab === t.id ? 'page' : undefined}
+        aria-label={t.id === 'home' && attentionCount > 0 ? `Home, ${attentionCount} need attention` : undefined}
+        onClick={() => onChange(t.id)}
+      >
         <span className="nav__icon">
           {t.icon}
-          {t.id === 'home' && attentionCount > 0 && <span className="nav__dot" role="img" aria-label={`${attentionCount} need attention`} />}
+          {t.id === 'home' && attentionCount > 0 && <span className="nav__dot" aria-hidden="true" />}
         </span>
         <span className="nav__label">{t.label}</span>
       </button>

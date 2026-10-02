@@ -183,5 +183,14 @@ export function buildSeed(today: Date): HouseholdSnapshot {
     ],
 
     mailCheck: { checkedBy: 'fallon', checkedAt: d(-1, 17, 40) },
+
+    workEntries: [],
+    unavailable: [],
+    childUpdates: [],
+    // Contact details stay empty until an adult enters them. Nothing here is invented.
+    trustedContacts: [
+      { id: 'fran', name: 'Fran', role: 'Preferred backup nanny', relationship: 'Their only nanny since birth' },
+    ],
+    setup: {},
   };
 }

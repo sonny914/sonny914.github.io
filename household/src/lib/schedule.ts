@@ -1,4 +1,5 @@
 import type {
+  UnavailablePeriod,
   HouseholdEvent,
   HouseholdMember,
   HouseholdSnapshot,
@@ -185,7 +186,7 @@ export function nextUp(events: HouseholdEvent[], now: Date): { event: HouseholdE
 // ---- Who can cover? ----------------------------------------------------------
 
 export interface Busy {
-  kind: 'work' | 'event';
+  kind: 'work' | 'event' | 'unavailable';
   title: string;
   until: Date;
 }
@@ -199,6 +200,7 @@ export function busyAdults(
   window: CoverageWindow,
   events: HouseholdEvent[],
   adultIds: MemberId[],
+  unavailable: UnavailablePeriod[] = [],
 ): Record<MemberId, Busy> {
   const from = window.allDay ? startOfDay(window.start) : window.start;
   const to = window.allDay ? addDays(from, 1) : window.end;
@@ -215,6 +217,14 @@ export function busyAdults(
       if (!prev || end > prev.until) busy[id] = { kind: e.category === 'work' ? 'work' : 'event', title: e.title, until: end };
     }
   }
+  for (const u of unavailable) {
+    if (!adultIds.includes(u.memberId)) continue;
+    const start = parseLocal(u.start);
+    const end = u.allDay ? addDays(startOfDay(parseLocal(u.end)), 1) : parseLocal(u.end);
+    if (!(start < to && end > from)) continue;
+    const prev = busy[u.memberId];
+    if (!prev || end > prev.until) busy[u.memberId] = { kind: 'unavailable', title: u.note || 'Unavailable', until: end };
+  }
   return busy;
 }
 
@@ -223,8 +233,9 @@ export function coverageAvailability(
   events: HouseholdEvent[],
   adultIds: MemberId[],
   viewerId: MemberId,
+  unavailable: UnavailablePeriod[] = [],
 ): { viewerBusy?: Busy; others: MemberId[] } {
-  const busy = busyAdults(window, events, adultIds);
+  const busy = busyAdults(window, events, adultIds, unavailable);
   return { viewerBusy: busy[viewerId], others: adultIds.filter((id) => id !== viewerId && !busy[id]) };
 }
 

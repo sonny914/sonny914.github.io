@@ -17,8 +17,8 @@ export function MailCard({
   members: HouseholdMember[];
   viewingAs: HouseholdMember | undefined;
   now: Date;
-  onCheck: () => void;
-  onUndo: () => void;
+  onCheck: () => boolean;
+  onUndo: () => boolean;
 }) {
   const checkedAt = parseLocal(mail.checkedAt);
   const needs = mailNeedsCheck(checkedAt, now);

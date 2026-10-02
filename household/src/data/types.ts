@@ -70,6 +70,12 @@ export interface HouseholdEvent {
   confirmation: Confirmation;
   /** Set when this event is a work shift imported from an uploaded schedule. */
   sourceScheduleId?: string;
+  /**
+   * Set when the event is derived from another record (a manual work entry or a
+   * child update). The event is rebuilt from that record on every read, so
+   * editing the record can never leave a second copy behind.
+   */
+  origin?: { kind: 'work-entry' | 'child-update'; id: string };
 }
 
 // ---- Coverage -------------------------------------------------------------
@@ -128,6 +134,74 @@ export interface UploadedSchedule {
   status: 'needs_review' | 'imported';
 }
 
+// ---- Who created / last edited what -----------------------------------------
+
+export interface Audit {
+  createdBy: MemberId;
+  createdAt: LocalDateTime;
+  updatedBy: MemberId;
+  updatedAt: LocalDateTime;
+}
+
+// ---- Manual work schedule ---------------------------------------------------
+
+/** One shift, or a weekly pattern of shifts. Same-day only: nobody works overnight here. */
+export interface WorkEntry extends Audit {
+  id: string;
+  memberId: MemberId;
+  /** First (or only) date, "YYYY-MM-DD". */
+  date: string;
+  /** "HH:mm" */
+  start: string;
+  end: string;
+  /** Repeats every week on these weekdays (0 = Sunday), optionally until a date. */
+  repeat?: { weekdays: number[]; until?: string };
+}
+
+export interface UnavailablePeriod extends Audit {
+  id: string;
+  memberId: MemberId;
+  start: LocalDateTime;
+  end: LocalDateTime;
+  allDay: boolean;
+  note?: string;
+}
+
+// ---- Child updates ----------------------------------------------------------
+
+export type ChildUpdateType = 'school' | 'appointment' | 'therapy' | 'reminder' | 'note';
+
+/** One update can be about several children (both twins) and is stored once. */
+export interface ChildUpdate extends Audit {
+  id: string;
+  childIds: MemberId[];
+  type: ChildUpdateType;
+  title: string;
+  note?: string;
+  /** When set, the update also appears on the shared calendar as one derived event. */
+  at?: LocalDateTime;
+}
+
+// ---- Trusted contacts -------------------------------------------------------
+
+/**
+ * Someone the household may call. Not a household member: no account, never an
+ * assignee, and contacting them is never the same as confirmed childcare.
+ */
+export interface TrustedContact {
+  id: string;
+  name: string;
+  role: string;
+  relationship?: string;
+  phone?: string;
+  email?: string;
+  notes?: string;
+  updatedBy?: MemberId;
+  updatedAt?: LocalDateTime;
+}
+
+export type SetupStatus = 'done' | 'skipped';
+
 // ---- Whole-household snapshot --------------------------------------------
 
 export interface HouseholdSnapshot {
@@ -137,4 +211,10 @@ export interface HouseholdSnapshot {
   reminders: Reminder[];
   uploadedSchedules: UploadedSchedule[];
   mailCheck: MailCheck;
+  workEntries: WorkEntry[];
+  unavailable: UnavailablePeriod[];
+  childUpdates: ChildUpdate[];
+  trustedContacts: TrustedContact[];
+  /** Per adult: has the schedule step of first-time setup been finished or skipped? */
+  setup: Record<MemberId, SetupStatus>;
 }

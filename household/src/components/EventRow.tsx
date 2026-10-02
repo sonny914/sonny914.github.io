@@ -57,7 +57,12 @@ export function EventRow({
         </p>
         {!done && (
           <p className="row__people">
-            {quiet && <span className="row__cat">{CATEGORY_LABELS[event.category]}</span>}
+            {quiet && (
+              <span className="row__cat">
+                {CATEGORY_LABELS[event.category]}
+                {variant === 'upcoming' && end && !event.allDay && ` · until ${formatTime(end)}`}
+              </span>
+            )}
             {everyone ? (
               <span className="person">Everyone</span>
             ) : (
