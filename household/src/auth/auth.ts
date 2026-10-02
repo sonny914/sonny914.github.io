@@ -2,51 +2,72 @@ import type { MemberId } from '../data/types';
 
 export interface AuthSession {
   memberId: MemberId;
+  /** Account mode only. */
+  email?: string;
 }
 
+export type AuthResult =
+  | { status: 'signed-out' }
+  /** Signed in with Supabase but not linked to a household member. Treated as having no access. */
+  | { status: 'unlinked'; email?: string }
+  | { status: 'signed-in'; session: AuthSession };
+
 /**
- * Who is using the app. Two implementations are possible:
+ * Who is using the app.
  *
- * - 'demo' (the only one built): choosing a name stores it in this browser. There is
- *   no password and no proof of identity, so it is NOT a sign-in and nothing is shared.
- * - 'account' (needs external setup, see README): real sign-in by e-mail link. The
- *   signed-in account is linked once to one member id (jay / fallon / adult3), and
- *   getSession() returns that member. Member ids never change.
+ * - 'demo': choosing a name stores it in this browser. No password, no proof of identity, so it is
+ *   NOT a sign-in and grants nothing. Only used when no Supabase project is configured.
+ * - 'account': real e-mail sign-in. The member id comes ONLY from the database (the account link
+ *   written when the invited e-mail address first signed up). A person cannot select an identity.
  */
 export interface AuthService {
   readonly kind: 'demo' | 'account';
-  getSession(adultIds: MemberId[]): AuthSession | null;
-  /** Demo: remember this choice. Account: link the signed-in account to this member. */
-  chooseProfile(memberId: MemberId): void;
-  /** Demo: forget the choice ("Switch person"). Account: sign out. */
-  signOut(): void;
+  /** An immediate answer when it can be known synchronously (demo). */
+  getSessionNow?(): AuthResult;
+  getSession(): Promise<AuthResult>;
+  /** Called when the signed-in state changes (for example when a magic link is opened). */
+  subscribe(onChange: () => void): () => void;
+  /** Demo only. */
+  chooseProfile?(memberId: MemberId): Promise<void>;
+  /** Account only: e-mail a sign-in link and code. Resolves the same way whether or not the address is invited. */
+  requestSignIn?(email: string): Promise<void>;
+  /** Account only: sign in with the 6-digit code from the e-mail. */
+  verifyCode?(email: string, code: string): Promise<void>;
+  signOut(): Promise<void>;
 }
+
+// ---- Demo --------------------------------------------------------------------------
 
 // Same key slice 1 used for "Viewing as", so an earlier choice carries over.
 const KEY = 'cottage.demo.viewingAs.v1';
 
-export const demoAuth: AuthService = {
-  kind: 'demo',
-  getSession(adultIds) {
+export function createDemoAuth(adultIds: MemberId[]): AuthService {
+  const read = (): AuthResult => {
     try {
       const stored = window.localStorage.getItem(KEY);
-      return stored && adultIds.includes(stored) ? { memberId: stored } : null;
+      return stored && adultIds.includes(stored) ? { status: 'signed-in', session: { memberId: stored } } : { status: 'signed-out' };
     } catch {
-      return null;
+      return { status: 'signed-out' };
     }
-  },
-  chooseProfile(memberId) {
-    try {
-      window.localStorage.setItem(KEY, memberId);
-    } catch {
-      /* private mode: the choice just will not persist */
-    }
-  },
-  signOut() {
-    try {
-      window.localStorage.removeItem(KEY);
-    } catch {
-      /* ignore */
-    }
-  },
-};
+  };
+  return {
+    kind: 'demo',
+    getSessionNow: read,
+    getSession: async () => read(),
+    subscribe: () => () => undefined,
+    async chooseProfile(memberId) {
+      try {
+        window.localStorage.setItem(KEY, memberId);
+      } catch {
+        /* private mode: the choice just will not persist */
+      }
+    },
+    async signOut() {
+      try {
+        window.localStorage.removeItem(KEY);
+      } catch {
+        /* ignore */
+      }
+    },
+  };
+}

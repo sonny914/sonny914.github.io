@@ -194,3 +194,23 @@ export function buildSeed(today: Date): HouseholdSnapshot {
     setup: {},
   };
 }
+
+/**
+ * The household with nothing in it, for shared mode: no sample shifts, events or coverage needs.
+ * Everything on the board then comes from what the three adults entered.
+ */
+export function buildEmptyHousehold(): HouseholdSnapshot {
+  return {
+    members: MEMBERS,
+    events: [],
+    coverageRequests: [],
+    reminders: [],
+    uploadedSchedules: [],
+    mailCheck: null,
+    workEntries: [],
+    unavailable: [],
+    childUpdates: [],
+    trustedContacts: [],
+    setup: {},
+  };
+}

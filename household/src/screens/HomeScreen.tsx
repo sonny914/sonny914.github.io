@@ -17,10 +17,10 @@ import {
 } from '../lib/schedule';
 
 export interface HomeActions {
-  onAttentionAct: (item: AttentionItem) => boolean;
-  onAttentionUndo: (item: AttentionItem) => boolean;
-  onMailCheck: () => boolean;
-  onMailUndo: () => boolean;
+  onAttentionAct: (item: AttentionItem) => Promise<boolean>;
+  onAttentionUndo: (item: AttentionItem) => Promise<boolean>;
+  onMailCheck: () => Promise<boolean>;
+  onMailUndo: () => Promise<boolean>;
   onUpdateSchedule: () => void;
 }
 
@@ -29,11 +29,13 @@ export function HomeScreen({
   now,
   chrome,
   actions,
+  coverageTracked,
 }: {
   data: HouseholdSnapshot;
   now: Date;
   chrome: Chrome;
   actions: HomeActions;
+  coverageTracked: boolean;
 }) {
   const [filter, setFilter] = useState<Filter>('all');
   const me = data.members.find((m) => m.id === chrome.viewingAs);
@@ -88,6 +90,7 @@ export function HomeScreen({
             viewingAsName={me?.name ?? 'you'}
             onAct={actions.onAttentionAct}
             onUndo={actions.onAttentionUndo}
+            coverageTracked={coverageTracked}
           />
           <TodayTimeline events={view.today} members={data.members} now={now} filterName={filterName} />
           <button type="button" className="link-btn schedule-link" onClick={actions.onUpdateSchedule}>Update my schedule</button>

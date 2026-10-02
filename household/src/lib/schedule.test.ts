@@ -83,7 +83,7 @@ describe('needs attention', () => {
 
 describe('mail', () => {
   it('needs a check until someone has checked it today', () => {
-    expect(mailNeedsCheck(parseLocal(data.mailCheck.checkedAt), now)).toBe(true);
+    expect(mailNeedsCheck(parseLocal(data.mailCheck!.checkedAt), now)).toBe(true);
     expect(mailNeedsCheck(new Date(2026, 9, 1, 9, 0), now)).toBe(false);
   });
 });

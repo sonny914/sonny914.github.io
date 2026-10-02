@@ -45,14 +45,19 @@ export function EventRow({
     <li className="row" data-quiet={quiet || undefined} data-unassigned={(resp.length === 0 && !done) || undefined} data-variant={variant} data-status={live ? 'now' : done ? 'done' : 'later'} data-next={isNext || undefined}>
       <div className="row__time">
         <span className="row__start">{event.allDay ? 'All day' : formatTime(start)}</span>
-        {variant === 'today' && !event.allDay && end && <span className="row__end">{formatTime(end)}</span>}
+        {variant === 'today' && !event.allDay && end && (
+          <span className="row__end">
+            {formatTime(end)}
+            {end.toDateString() !== start.toDateString() && <span className="row__next-day"> next day</span>}
+          </span>
+        )}
       </div>
       <div className="row__body">
         {marker && <p className="row__marker">{marker}</p>}
         <Title className="row__title">{event.title}</Title>
         <p className="row__meta" hidden={quiet}>
           <span className="row__cat">{CATEGORY_LABELS[event.category]}</span>
-          {variant === 'upcoming' && end && !event.allDay && ` · until ${formatTime(end)}`}
+          {variant === 'upcoming' && end && !event.allDay && ` · until ${formatTime(end)}${end.toDateString() !== start.toDateString() ? ' next day' : ''}`}
           {event.location && !done && ` · ${event.location}`}
         </p>
         {!done && (

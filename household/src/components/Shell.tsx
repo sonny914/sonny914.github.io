@@ -9,6 +9,8 @@ export interface Chrome {
   onAdd: () => void;
   adults: HouseholdMember[];
   viewingAs: MemberId;
+  /** Demo only: pick who you are. In account mode the identity comes from the sign-in and cannot be changed here. */
+  canSwitch: boolean;
   onViewingAs: (id: MemberId) => void;
   attentionCount: number;
 }
@@ -35,15 +37,22 @@ export function Shell({
           <div className="masthead__top">
             <p className="masthead__eyebrow">{eyebrow}</p>
             <div className="masthead__tools">
-              <label className="viewing-as">
-                <span className="viewing-as__label">Viewing as</span>
-                <select value={chrome.viewingAs} onChange={(e) => chrome.onViewingAs(e.target.value)}>
-                  {chrome.adults.map((a) => (
-                    <option key={a.id} value={a.id}>{a.name}</option>
-                  ))}
-                </select>
-                <ChevronDownIcon size={16} className="viewing-as__chevron" />
-              </label>
+              {chrome.canSwitch ? (
+                <label className="viewing-as">
+                  <span className="viewing-as__label">Viewing as</span>
+                  <select value={chrome.viewingAs} onChange={(e) => chrome.onViewingAs(e.target.value)}>
+                    {chrome.adults.map((a) => (
+                      <option key={a.id} value={a.id}>{a.name}</option>
+                    ))}
+                  </select>
+                  <ChevronDownIcon size={16} className="viewing-as__chevron" />
+                </label>
+              ) : (
+                <div className="viewing-as">
+                  <span className="viewing-as__label">Signed in as</span>
+                  <span className="viewing-as__name">{chrome.adults.find((a) => a.id === chrome.viewingAs)?.name}</span>
+                </div>
+              )}
               <button type="button" className="btn btn-add-desktop" onClick={chrome.onAdd} aria-haspopup="dialog">
                 <PlusIcon size={18} /> Add
               </button>

@@ -27,6 +27,7 @@ export function NeedsAttention({
   viewingAsName,
   onAct,
   onUndo,
+  coverageTracked,
 }: {
   items: AttentionItem[];
   members: HouseholdMember[];
@@ -36,8 +37,10 @@ export function NeedsAttention({
   today: Date;
   filterName?: string;
   viewingAsName: string;
-  onAct: (item: AttentionItem) => boolean;
-  onUndo: (item: AttentionItem) => boolean;
+  onAct: (item: AttentionItem) => Promise<boolean>;
+  onUndo: (item: AttentionItem) => Promise<boolean>;
+  /** False in shared mode: coverage needs are not shared records yet, so an empty list is not "all covered". */
+  coverageTracked: boolean;
 }) {
   const [expanded, setExpanded] = useState(false);
   const [last, setLast] = useState<{ item: AttentionItem; message: string } | null>(null);
@@ -51,8 +54,8 @@ export function NeedsAttention({
   const adultIds = members.filter((m) => m.role === 'adult').map((m) => m.id);
   const nameOf = (id: MemberId) => members.find((m) => m.id === id)?.name ?? 'Someone';
 
-  function act(item: AttentionItem) {
-    if (!onAct(item)) return; // the error notice explains; do not offer an Undo for something that did not happen
+  async function act(item: AttentionItem) {
+    if (!(await onAct(item))) return; // the error notice explains; do not offer an Undo for something that did not happen
     setLast({
       item,
       message:
@@ -73,13 +76,15 @@ export function NeedsAttention({
       {last && (
         <p className="attention__undo" role="status">
           {last.message}
-          <button type="button" className="attention__undo-btn" onClick={() => { if (onUndo(last.item)) setLast(null); }}>Undo</button>
+          <button type="button" className="attention__undo-btn" onClick={async () => { if (await onUndo(last.item)) setLast(null); }}>Undo</button>
         </p>
       )}
       {items.length === 0 ? (
         <p className="attention__clear">
-          <strong>{filterName ? `Nothing needs ${filterName}.` : 'Everything is covered.'}</strong>{' '}
-          Open coverage, confirmations and overdue tasks will show up here.
+          <strong>{filterName ? `Nothing needs ${filterName}.` : coverageTracked ? 'Everything is covered.' : 'Nothing flagged.'}</strong>{' '}
+          {coverageTracked
+            ? 'Open coverage, confirmations and overdue tasks will show up here.'
+            : 'Coverage needs and confirmations aren’t shared records yet, so this list stays empty for now.'}
         </p>
       ) : (
         <ul className="attention__list">

@@ -15,22 +15,39 @@ export const parseDateKey = (k: string): Date => {
 export interface ShiftInput {
   date: string;
   start: string;
+  endDate: string;
   end: string;
   repeats: boolean;
   weekdays: number[];
   until: string;
 }
 
+const minutesBetween = (aDate: string, aTime: string, bDate: string, bTime: string): number =>
+  (new Date(`${bDate}T${bTime}`).getTime() - new Date(`${aDate}T${aTime}`).getTime()) / 60_000;
+
 /** Returns an error message a person can act on, or null when the shift is valid. */
 export function validateShift(i: ShiftInput): string | null {
-  if (!i.date) return 'Choose a date.';
+  if (!i.date) return 'Choose a start date.';
   if (!i.start || !i.end) return 'Enter a start and end time.';
-  if (i.end <= i.start) return 'End time must be after the start time. Overnight shifts are not supported.';
+  if (!i.endDate) return 'Choose an end date. For a shift that ends the same day, use the start date.';
+  const mins = minutesBetween(i.date, i.start, i.endDate, i.end);
+  if (mins <= 0) return 'The shift must end after it starts. For an overnight shift, set the end date to the next day.';
+  if (mins > 24 * 60) return 'A shift can’t run longer than 24 hours.';
   if (i.repeats) {
     if (i.weekdays.length === 0) return 'Choose at least one day to repeat on.';
     if (i.until && i.until < i.date) return 'The repeat end date must be on or after the first date.';
   }
   return null;
+}
+
+/** Whole days from one "YYYY-MM-DD" to another. */
+export function daysBetween(from: string, to: string): number {
+  return Math.round((parseDateKey(to).getTime() - parseDateKey(from).getTime()) / 86_400_000);
+}
+
+/** Entries saved before end dates existed ended on their start date. */
+export function normalizeWorkEntry(e: Omit<WorkEntry, 'endDate'> & { endDate?: string }): WorkEntry {
+  return { ...e, endDate: e.endDate ?? e.date };
 }
 
 /** All dates a work entry falls on within [from, to], inclusive. */
@@ -52,12 +69,13 @@ export function workEntryDates(e: WorkEntry, from: Date, to: Date): string[] {
 
 /** Ids are derived from the entry id and date, so rebuilding never duplicates. */
 export function expandWorkEntry(e: WorkEntry, from: Date, to: Date): HouseholdEvent[] {
+  const runsOver = daysBetween(e.date, e.endDate ?? e.date);
   return workEntryDates(e, from, to).map((day) => ({
     id: `w-${e.id}-${day}`,
     title: 'Work shift',
     category: 'work' as const,
     start: `${day}T${e.start}`,
-    end: `${day}T${e.end}`,
+    end: `${toDateKey(addDays(parseDateKey(day), runsOver))}T${e.end}`,
     participantIds: [e.memberId],
     responsibleAdultIds: [e.memberId],
     confirmation: { state: 'not_required' as const },
@@ -66,7 +84,8 @@ export function expandWorkEntry(e: WorkEntry, from: Date, to: Date): HouseholdEv
 }
 
 export function describeWorkEntry(e: WorkEntry): string {
-  const times = `${fmtHm(e.start)} to ${fmtHm(e.end)}`;
+  const nextDay = daysBetween(e.date, e.endDate ?? e.date) > 0 ? ' (next day)' : '';
+  const times = `${fmtHm(e.start)} to ${fmtHm(e.end)}${nextDay}`;
   if (!e.repeat) {
     const d = parseDateKey(e.date);
     return `${d.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })} · ${times}`;

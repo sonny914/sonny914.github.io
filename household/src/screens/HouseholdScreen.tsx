@@ -16,14 +16,15 @@ import { describeWorkEntry, updateTypeLabel } from '../lib/schedules';
 export type HouseholdView = { kind: 'list' } | { kind: 'person'; id: MemberId } | { kind: 'contact'; id: string };
 
 export interface ProfileActions {
-  /** Every save/delete returns whether it was stored. Forms stay open when it was not. */
-  saveWork: (e: WorkEntry) => boolean;
-  deleteWork: (id: string) => boolean;
-  saveUnavailable: (u: UnavailablePeriod) => boolean;
-  deleteUnavailable: (id: string) => boolean;
-  saveUpdate: (u: ChildUpdate) => boolean;
-  deleteUpdate: (id: string) => boolean;
-  saveContact: (id: string, patch: Partial<TrustedContact>) => boolean;
+  /** Every save/delete resolves to whether it was stored. Forms stay open when it was not. */
+  saveWork: (e: WorkEntry) => Promise<boolean>;
+  deleteWork: (id: string) => Promise<boolean>;
+  saveUnavailable: (u: UnavailablePeriod) => Promise<boolean>;
+  deleteUnavailable: (id: string) => Promise<boolean>;
+  saveUpdate: (u: ChildUpdate) => Promise<boolean>;
+  deleteUpdate: (id: string) => Promise<boolean>;
+  saveContact: (id: string, patch: Partial<TrustedContact>) => Promise<boolean>;
+  /** Demo: forget who you are on this device. Account: sign out. */
   switchPerson: () => void;
 }
 
@@ -38,6 +39,9 @@ export function HouseholdScreen({
   now,
   chrome,
   auth,
+  email,
+  canReviewImport,
+  onReviewImport,
   view,
   onView,
   actions,
@@ -46,6 +50,10 @@ export function HouseholdScreen({
   now: Date;
   chrome: Chrome;
   auth: AuthService;
+  email?: string;
+  /** Account mode, with demo records still saved in this browser. */
+  canReviewImport: boolean;
+  onReviewImport: () => void;
   view: HouseholdView;
   onView: (v: HouseholdView) => void;
   actions: ProfileActions;
@@ -62,7 +70,7 @@ export function HouseholdScreen({
 
   return (
     <Shell chrome={chrome} eyebrow="The Cottage" heading={heading} summary={summary}>
-      {view.kind === 'list' && <PeopleList data={data} me={me} auth={auth} onView={onView} onSwitch={actions.switchPerson} />}
+      {view.kind === 'list' && <PeopleList data={data} me={me} auth={auth} email={email} canReviewImport={canReviewImport} onReviewImport={onReviewImport} onView={onView} onSwitch={actions.switchPerson} />}
       {person && person.role === 'adult' && (
         <AdultProfile data={data} now={now} person={person} me={me} onBack={() => onView({ kind: 'list' })} actions={actions} />
       )}
@@ -86,12 +94,18 @@ function PeopleList({
   data,
   me,
   auth,
+  email,
+  canReviewImport,
+  onReviewImport,
   onView,
   onSwitch,
 }: {
   data: HouseholdSnapshot;
   me?: HouseholdMember;
   auth: AuthService;
+  email?: string;
+  canReviewImport: boolean;
+  onReviewImport: () => void;
   onView: (v: HouseholdView) => void;
   onSwitch: () => void;
 }) {
@@ -141,13 +155,24 @@ function PeopleList({
 
       <section className="section" aria-labelledby="account-h">
         <h2 id="account-h" className="section__title">This device</h2>
-        <p className="account__who">Using The Cottage as <strong>{me?.name}</strong>.</p>
         {auth.kind === 'demo' ? (
-          <p className="account__note">
-            Demo mode: this is a name saved in this browser, not a sign-in. Schedules and updates are saved on this device only and are not shared with the other adults yet.
-          </p>
+          <>
+            <p className="account__who">Using The Cottage as <strong>{me?.name}</strong>.</p>
+            <p className="account__note">
+              Demo mode: this is a name saved in this browser, not a sign-in. Schedules and updates are saved on this device only and are not shared with the other adults yet.
+            </p>
+          </>
         ) : (
-          <p className="account__note">Signed in. Changes are shared with the other adults.</p>
+          <>
+            <p className="account__who">Signed in as <strong>{me?.name}</strong>{email ? ` (${email})` : ''}.</p>
+            <p className="account__note">Everything you save here is shared with the other adults, and shows that you made the change.</p>
+          </>
+        )}
+        {canReviewImport && (
+          <p className="account__note">
+            This browser still holds records saved in demo mode. They have not been uploaded.{' '}
+            <button type="button" className="link-btn" onClick={onReviewImport}>Review records on this device</button>
+          </p>
         )}
         <button type="button" className="btn btn-quiet" onClick={onSwitch}>{auth.kind === 'demo' ? 'Switch person' : 'Sign out'}</button>
       </section>
@@ -236,8 +261,8 @@ function AdultProfile({
           <ShiftForm
             entry={editing.entry}
             onCancel={close}
-            onSave={(i) => { if (actions.saveWork(shiftToEntry(i, person.id, me?.id ?? person.id, now, editing.entry))) close(); }}
-            onDelete={editing.entry ? () => { if (actions.deleteWork(editing.entry!.id)) close(); } : undefined}
+            onSave={async (i) => { if (await actions.saveWork(shiftToEntry(i, person.id, me?.id ?? person.id, now, editing.entry))) close(); }}
+            onDelete={editing.entry ? async () => { if (await actions.deleteWork(editing.entry!.id)) close(); } : undefined}
           />
         </Sheet>
       )}
@@ -246,8 +271,8 @@ function AdultProfile({
           <UnavailableForm
             period={editing.period}
             onCancel={close}
-            onSave={(i) => { if (actions.saveUnavailable(inputToPeriod(i, person.id, me?.id ?? person.id, now, editing.period))) close(); }}
-            onDelete={editing.period ? () => { if (actions.deleteUnavailable(editing.period!.id)) close(); } : undefined}
+            onSave={async (i) => { if (await actions.saveUnavailable(inputToPeriod(i, person.id, me?.id ?? person.id, now, editing.period))) close(); }}
+            onDelete={editing.period ? async () => { if (await actions.deleteUnavailable(editing.period!.id)) close(); } : undefined}
           />
         </Sheet>
       )}
@@ -324,8 +349,8 @@ function ChildProfile({
             startWith={person.id}
             update={editing.update}
             onCancel={close}
-            onSave={(i) => { if (actions.saveUpdate(inputToUpdate(i, me?.id ?? person.id, now, editing.update))) close(); }}
-            onDelete={editing.update ? () => { if (actions.deleteUpdate(editing.update!.id)) close(); } : undefined}
+            onSave={async (i) => { if (await actions.saveUpdate(inputToUpdate(i, me?.id ?? person.id, now, editing.update))) close(); }}
+            onDelete={editing.update ? async () => { if (await actions.deleteUpdate(editing.update!.id)) close(); } : undefined}
           />
         </Sheet>
       )}
@@ -376,7 +401,7 @@ function ContactProfile({
           <ContactForm
             contact={contact}
             onCancel={() => setEditing(false)}
-            onSave={(patch) => { if (actions.saveContact(contact.id, patch)) setEditing(false); }}
+            onSave={async (patch) => { if (await actions.saveContact(contact.id, patch)) setEditing(false); }}
           />
         </Sheet>
       )}

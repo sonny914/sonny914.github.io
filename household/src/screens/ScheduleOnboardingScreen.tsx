@@ -12,13 +12,16 @@ export function ScheduleOnboardingScreen({
   onSave,
   onFinish,
   onSkip,
+  where,
 }: {
   me: HouseholdMember;
   entries: WorkEntry[];
   now: Date;
-  onSave: (entry: WorkEntry) => boolean;
-  onFinish: () => boolean;
-  onSkip: () => boolean;
+  onSave: (entry: WorkEntry) => Promise<boolean>;
+  onFinish: () => Promise<boolean>;
+  onSkip: () => Promise<boolean>;
+  /** Where saved shifts live, in plain words (demo: this device only; shared: with the other adults). */
+  where: string;
 }) {
   const [adding, setAdding] = useState(false);
   const mine = entries.filter((e) => e.memberId === me.id);
@@ -43,8 +46,8 @@ export function ScheduleOnboardingScreen({
         <ShiftForm
           submitLabel="Save shift"
           onCancel={() => setAdding(false)}
-          onSave={(i) => {
-            if (onSave(shiftToEntry(i, me.id, me.id, now))) setAdding(false);
+          onSave={async (i) => {
+            if (await onSave(shiftToEntry(i, me.id, me.id, now))) setAdding(false);
           }}
         />
       ) : (
@@ -52,11 +55,11 @@ export function ScheduleOnboardingScreen({
           {mine.length === 0 ? (
             <>
               <button type="button" className="btn btn-primary" onClick={() => setAdding(true)}>Add my shifts</button>
-              <button type="button" className="btn btn-quiet" onClick={onSkip}>Skip for now</button>
+              <button type="button" className="btn btn-quiet" onClick={() => void onSkip()}>Skip for now</button>
             </>
           ) : (
             <>
-              <button type="button" className="btn btn-primary" onClick={onFinish}>Done</button>
+              <button type="button" className="btn btn-primary" onClick={() => void onFinish()}>Done</button>
               <button type="button" className="btn btn-quiet" onClick={() => setAdding(true)}>Add another shift</button>
             </>
           )}
@@ -65,7 +68,7 @@ export function ScheduleOnboardingScreen({
 
       <p className="gate__note">
         Photo and PDF upload, and reading a posted schedule for you, come in the next update. For now shifts are entered by hand.
-        Saved on this device only until shared saving is set up.
+        {where}
       </p>
     </main>
   );

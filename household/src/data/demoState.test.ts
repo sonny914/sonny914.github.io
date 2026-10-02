@@ -28,7 +28,7 @@ describe('demo state overlay', () => {
 
   it('sets and clears the mail check without touching other state', () => {
     const checked = setMail(claimCoverage(EMPTY_DEMO_STATE, 'x', 'jay'), { checkedBy: 'jay', checkedAt: '2026-10-01T14:00' });
-    expect(applyDemoState(seed, checked).mailCheck.checkedBy).toBe('jay');
+    expect(applyDemoState(seed, checked).mailCheck?.checkedBy).toBe('jay');
     const cleared = setMail(checked, undefined);
     expect(cleared.mail).toBeUndefined();
     expect(cleared.coverage).toEqual({ x: 'jay' });

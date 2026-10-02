@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useSubmit } from '../hooks/useSubmit';
 import type { ChildUpdate, ChildUpdateType, HouseholdMember, MemberId } from '../data/types';
 import { UPDATE_TYPES } from '../lib/schedules';
 import { Field } from './Field';
@@ -23,8 +24,8 @@ export function ChildUpdateForm({
   kids: HouseholdMember[];
   startWith: MemberId;
   update?: ChildUpdate;
-  onSave: (i: ChildUpdateInput) => void;
-  onDelete?: () => void;
+  onSave: (i: ChildUpdateInput) => void | Promise<void>;
+  onDelete?: () => void | Promise<void>;
   onCancel: () => void;
 }) {
   const [v, setV] = useState<ChildUpdateInput>(() => ({
@@ -36,10 +37,12 @@ export function ChildUpdateForm({
     time: update?.at?.slice(11, 16) ?? '',
   }));
   const [error, setError] = useState<string | null>(null);
+  const { busy, run } = useSubmit();
   const set = <K extends keyof ChildUpdateInput>(k: K, val: ChildUpdateInput[K]) => setV((p) => ({ ...p, [k]: val }));
 
   function submit(e: React.FormEvent) {
     e.preventDefault();
+    if (busy) return;
     const err =
       v.childIds.length === 0 ? 'Choose at least one child.'
       : !v.title.trim() ? 'Add a title.'
@@ -47,7 +50,7 @@ export function ChildUpdateForm({
       : !v.date && v.time ? 'Add a date, or clear the time.'
       : null;
     setError(err);
-    if (!err) onSave({ ...v, title: v.title.trim(), note: v.note.trim() });
+    if (!err) void run(() => onSave({ ...v, title: v.title.trim(), note: v.note.trim() }));
   }
 
   return (
@@ -90,9 +93,9 @@ export function ChildUpdateForm({
       <p className="field__hint">A dated update also appears once on the shared calendar.</p>
       {error && <p className="form__error" role="alert">{error}</p>}
       <div className="form__actions">
-        <button type="submit" className="btn btn-primary">Save update</button>
-        <button type="button" className="btn btn-quiet" onClick={onCancel}>Cancel</button>
-        {onDelete && <button type="button" className="link-btn" onClick={onDelete}>Delete this update</button>}
+        <button type="submit" className="btn btn-primary" disabled={busy}>{busy ? 'Saving…' : 'Save update'}</button>
+        <button type="button" className="btn btn-quiet" onClick={onCancel} disabled={busy}>Cancel</button>
+        {onDelete && <button type="button" className="link-btn" onClick={() => void run(onDelete)} disabled={busy}>Delete this update</button>}
       </div>
     </form>
   );

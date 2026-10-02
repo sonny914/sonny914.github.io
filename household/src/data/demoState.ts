@@ -11,7 +11,7 @@ import type {
   WorkEntry,
 } from './types';
 import { addDays, startOfDay } from '../lib/dates';
-import { expandWorkEntry, updateToEvent } from '../lib/schedules';
+import { expandWorkEntry, normalizeWorkEntry, updateToEvent } from '../lib/schedules';
 
 /**
  * What a person has changed on top of the seed data in this demo.
@@ -56,6 +56,10 @@ export const deleteUnavailable = (s: DemoState, id: string): DemoState => ({ ...
 export const saveChildUpdate = (s: DemoState, u: ChildUpdate): DemoState => ({ ...s, childUpdates: upsert(s.childUpdates, u) });
 export const deleteChildUpdate = (s: DemoState, id: string): DemoState => ({ ...s, childUpdates: s.childUpdates.filter((x) => x.id !== id) });
 export const saveContact = (s: DemoState, id: string, patch: Partial<TrustedContact>): DemoState => ({ ...s, contacts: { ...s.contacts, [id]: { ...s.contacts[id], ...patch } } });
+export const clearContact = (s: DemoState, id: string): DemoState => {
+  const { [id]: _gone, ...rest } = s.contacts;
+  return { ...s, contacts: rest };
+};
 export const completeSetup = (s: DemoState, id: MemberId, status: SetupStatus): DemoState => ({ ...s, setup: { ...s.setup, [id]: status } });
 
 export function claimCoverage(s: DemoState, id: string, by: MemberId): DemoState {
@@ -100,13 +104,14 @@ export function applyDemoState(seed: HouseholdSnapshot, s: DemoState, now: Date 
   const to = addDays(startOfDay(now), 60);
 
   // An adult who has entered their own schedule replaces the sample shifts for that person.
-  const ownSchedule = new Set(s.workEntries.map((e) => e.memberId));
+  const workEntries = s.workEntries.map(normalizeWorkEntry);
+  const ownSchedule = new Set(workEntries.map((e) => e.memberId));
   const base = seed.events.filter(
     (e) => !(e.category === 'work' && e.sourceScheduleId && e.participantIds.some((id) => ownSchedule.has(id))),
   );
 
   const derived: HouseholdEvent[] = [
-    ...s.workEntries.flatMap((e) => expandWorkEntry(e, from, to)),
+    ...workEntries.flatMap((e) => expandWorkEntry(e, from, to)),
     ...s.childUpdates.map(updateToEvent).filter((e): e is HouseholdEvent => !!e),
   ];
   const events = [...new Map([...base, ...derived].map((e) => [e.id, e])).values()];
@@ -126,7 +131,7 @@ export function applyDemoState(seed: HouseholdSnapshot, s: DemoState, now: Date 
       const done = s.tasksDone[r.id];
       return done ? { ...r, completedAt: done.at, completedBy: done.by } : r;
     }),
-    workEntries: s.workEntries,
+    workEntries,
     unavailable: s.unavailable,
     childUpdates: s.childUpdates,
     trustedContacts: seed.trustedContacts.map((c) => ({ ...c, ...s.contacts[c.id] })),

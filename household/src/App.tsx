@@ -1,82 +1,169 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
-import { demoAuth as auth } from './auth/auth';
+import { useCallback, useMemo, useState } from 'react';
 import { AddSheet } from './components/AddSheet';
 import type { TabId } from './components/BottomNav';
-import type { Chrome } from './components/Shell';
 import { Notice, type NoticeState } from './components/Notice';
-import { localDemoRepository as repo, StorageError } from './data/repository';
+import type { Chrome } from './components/Shell';
+import { saveErrorMessage } from './data/errors';
+import { MEMBERS } from './data/members';
+import { readLocalDemoState } from './data/repository';
+import { useAuth } from './hooks/useAuth';
 import { useNow } from './hooks/useNow';
-import { useSession } from './hooks/useSession';
+import { useSnapshot } from './hooks/useSnapshot';
+import { hasLocalRecords } from './import/plan';
 import { attentionItems, type AttentionItem } from './lib/schedule';
 import { HomeScreen } from './screens/HomeScreen';
 import { HouseholdScreen, type HouseholdView, type ProfileActions } from './screens/HouseholdScreen';
+import { ImportReviewScreen } from './screens/ImportReviewScreen';
 import { PlaceholderScreen } from './screens/PlaceholderScreen';
 import { ScheduleOnboardingScreen } from './screens/ScheduleOnboardingScreen';
+import { SignInScreen } from './screens/SignInScreen';
+import { ErrorScreen, LoadingScreen, UnlinkedScreen } from './screens/StatusScreens';
 import { WhoAreYouScreen } from './screens/WhoAreYouScreen';
+import { defaultServices, type Services } from './services';
 
-export default function App() {
+export default function App({ services }: { services?: Services }) {
+  const resolved = useMemo(() => (services ? ({ ok: true, services } as const) : defaultServices()), [services]);
+  if (!resolved.ok) return <ErrorScreen title="The Cottage can’t start." message={resolved.reason} />;
+  return <Cottage services={resolved.services} />;
+}
+
+const reviewedKey = (me: string) => `cottage.import.reviewed.${me}`;
+const wasReviewed = (me: string) => {
+  try {
+    return window.localStorage.getItem(reviewedKey(me)) === '1';
+  } catch {
+    return false;
+  }
+};
+
+function Cottage({ services: { repo, auth } }: { services: Services }) {
   const now = useNow();
   const [tab, setTab] = useState<TabId>('home');
   const [addOpen, setAddOpen] = useState(false);
   const [householdView, setHouseholdView] = useState<HouseholdView>({ kind: 'list' });
-  // Bumped after a write so the snapshot is re-read. A database version would subscribe instead.
-  const [version, setVersion] = useState(0);
-  const touch = useCallback(() => setVersion((v) => v + 1), []);
   const [notice, setNotice] = useState<NoticeState | null>(null);
-  useEffect(() => {
-    if (notice?.kind !== 'saved') return;
-    const t = setTimeout(() => setNotice(null), 4000);
-    return () => clearTimeout(t);
-  }, [notice]);
+  const [importForced, setImportForced] = useState(false);
+  const [importTick, setImportTick] = useState(0);
 
-  /** Runs a write. On success: refresh and (optionally) confirm. On failure: say so, keep the form open. */
-  const commit = useCallback(
-    (savedText: string | null, write: () => void): boolean => {
-      try {
-        write();
-        touch();
-        setNotice(savedText ? { kind: 'saved', text: savedText } : null);
-        return true;
-      } catch (e) {
-        setNotice({ kind: 'error', text: e instanceof StorageError ? e.message : 'Something went wrong, so your change was not saved.' });
-        return false;
-      }
-    },
-    [touch],
-  );
+  const { state: authState, refresh: refreshAuth, choose, signOut } = useAuth(auth);
+  const signedIn = authState.status === 'signed-in';
+  const me = authState.status === 'signed-in' ? authState.session.memberId : '';
+  const email = authState.status === 'signed-in' ? authState.session.email : undefined;
 
-  // eslint-disable-next-line -- `version` is the invalidation key
-  const data = useMemo(() => repo.getSnapshot(now), [now, version]);
-  const adults = useMemo(() => data.members.filter((m) => m.role === 'adult'), [data.members]);
-  const { session, choose, signOut } = useSession(auth, adults.map((a) => a.id));
+  const snap = useSnapshot(repo, now, signedIn);
+  const data = snap.data;
+  const adults = useMemo(() => (data?.members ?? MEMBERS).filter((m) => m.role === 'adult'), [data]);
+  const attentionCount = useMemo(() => (data ? attentionItems(data, now, 'all').length : 0), [data, now]);
   const closeAdd = useCallback(() => setAddOpen(false), []);
 
-  const viewingAs = session?.memberId ?? '';
-  const attentionCount = useMemo(() => attentionItems(data, now, 'all').length, [data, now]);
+  // Records saved by the single-device demo. Only ever offered for review in shared mode; never uploaded silently.
+  const localRecords = useMemo(
+    () => repo.mode === 'shared' && signedIn && hasLocalRecords(readLocalDemoState()),
+    // `importTick` re-checks after an import or removal.
+    // eslint-disable-next-line
+    [repo.mode, signedIn, importTick],
+  );
 
-  // ---- Not set up yet on this device ----
-  if (!session) {
-    return (
-      <>
-        <WhoAreYouScreen adults={adults} auth={auth} onChoose={(id) => { choose(id); setTab('home'); }} />
-        <Notice notice={notice} onDismiss={() => setNotice(null)} />
-      </>
+  const savedText = (what: string) => (repo.mode === 'demo' ? `${what} saved on this device only.` : `${what} saved.`);
+
+  /**
+   * Runs one write. Success: reload, then confirm. Failure: say so, change nothing on screen, and return
+   * false so the form stays open with everything the person typed.
+   */
+  const commit = useCallback(
+    async (confirmation: string | null, write: () => Promise<void>): Promise<boolean> => {
+      try {
+        await write();
+      } catch (e) {
+        setNotice({ kind: 'error', text: saveErrorMessage(e) });
+        return false;
+      }
+      try {
+        await snap.refresh();
+        setNotice(confirmation ? { kind: 'saved', text: confirmation } : null);
+      } catch {
+        // The change was stored; only the reload failed. Say exactly that.
+        setNotice({ kind: 'saved', text: `${confirmation ?? 'Saved.'} The list will update when the connection is back.` });
+      }
+      return true;
+    },
+    [snap],
+  );
+
+  const withNotice = (node: React.ReactNode) => (
+    <>
+      {node}
+      <Notice notice={notice} onDismiss={() => setNotice(null)} />
+    </>
+  );
+
+  // ---- Who is this? ----
+  if (authState.status === 'loading') return withNotice(<LoadingScreen label="Checking sign-in…" />);
+  if (authState.status === 'error') {
+    return withNotice(<ErrorScreen title="Couldn’t check sign-in." message={authState.message} onRetry={() => void refreshAuth()} />);
+  }
+  if (authState.status === 'signed-out') {
+    return withNotice(
+      auth.kind === 'account' ? (
+        <SignInScreen auth={auth} onSignedIn={() => void refreshAuth()} />
+      ) : (
+        <WhoAreYouScreen adults={adults} auth={auth} onChoose={(id) => { void choose(id); setTab('home'); }} />
+      ),
     );
   }
-  const me = adults.find((a) => a.id === session.memberId);
-  if (me && !data.setup[me.id]) {
-    return (
-      <>
-        <ScheduleOnboardingScreen
-          me={me}
-          entries={data.workEntries}
-          now={now}
-          onSave={(e) => commit('Shift saved on this device only.', () => repo.saveWorkEntry(e))}
-          onFinish={() => commit(null, () => repo.completeSetup(me.id, 'done'))}
-          onSkip={() => commit(null, () => repo.completeSetup(me.id, 'skipped'))}
-        />
-        <Notice notice={notice} onDismiss={() => setNotice(null)} />
-      </>
+  if (authState.status === 'unlinked') return withNotice(<UnlinkedScreen email={authState.email} onSignOut={() => void signOut()} />);
+
+  // ---- Signed in: the household ----
+  if (!data) {
+    return withNotice(
+      snap.error ? (
+        <ErrorScreen title="Couldn’t load the household." message={snap.error} onRetry={() => void snap.retry()} onSignOut={() => void signOut()} />
+      ) : (
+        <LoadingScreen />
+      ),
+    );
+  }
+
+  const finishImport = () => {
+    try {
+      window.localStorage.setItem(reviewedKey(me), '1');
+    } catch {
+      /* ignore */
+    }
+    setImportForced(false);
+    setImportTick((t) => t + 1);
+  };
+  if (repo.mode === 'shared' && (importForced || (localRecords && !wasReviewed(me)))) {
+    return withNotice(
+      <ImportReviewScreen
+        repo={repo}
+        me={me}
+        shared={data}
+        onDone={finishImport}
+        onImported={async () => {
+          setImportTick((t) => t + 1);
+          try {
+            await snap.refresh();
+          } catch {
+            /* the next refresh will pick it up */
+          }
+        }}
+      />,
+    );
+  }
+
+  const myProfile = adults.find((a) => a.id === me);
+  if (myProfile && !data.setup[myProfile.id]) {
+    return withNotice(
+      <ScheduleOnboardingScreen
+        me={myProfile}
+        entries={data.workEntries}
+        now={now}
+        where={repo.mode === 'demo' ? 'Saved on this device only until shared saving is set up.' : 'Shifts you save are shared with the other adults.'}
+        onSave={(e) => commit(savedText('Shift'), () => repo.saveWorkEntry(e))}
+        onFinish={() => commit(null, () => repo.completeSetup(myProfile.id, 'done'))}
+        onSkip={() => commit(null, () => repo.completeSetup(myProfile.id, 'skipped'))}
+      />,
     );
   }
 
@@ -86,49 +173,48 @@ export default function App() {
     onTab: (t) => { setNotice(null); setTab(t); if (t === 'household') setHouseholdView({ kind: 'list' }); },
     onAdd: () => setAddOpen(true),
     adults,
-    viewingAs,
-    onViewingAs: (id) => { setNotice(null); choose(id); setHouseholdView({ kind: 'list' }); },
+    viewingAs: me,
+    canSwitch: auth.kind === 'demo',
+    onViewingAs: (id) => { setNotice(null); void choose(id); setHouseholdView({ kind: 'list' }); },
     attentionCount,
   };
 
   const homeActions = {
-    onAttentionAct: (item: AttentionItem) => {
-      return commit(null, () => {
-        if (item.kind === 'coverage') repo.claimCoverage(item.sourceId, viewingAs);
-        if (item.kind === 'confirmation') repo.confirmEvent(item.sourceId);
-        if (item.kind === 'overdue') repo.completeTask(item.sourceId, viewingAs, new Date());
-      });
-    },
-    onAttentionUndo: (item: AttentionItem) => {
-      return commit(null, () => {
-        if (item.kind === 'coverage') repo.releaseCoverage(item.sourceId);
-        if (item.kind === 'confirmation') repo.unconfirmEvent(item.sourceId);
-        if (item.kind === 'overdue') repo.reopenTask(item.sourceId);
-      });
-    },
-    onMailCheck: () => commit(null, () => repo.markMailChecked(viewingAs, new Date())),
+    onAttentionAct: (item: AttentionItem) =>
+      commit(null, async () => {
+        if (item.kind === 'coverage') await repo.claimCoverage(item.sourceId, me);
+        if (item.kind === 'confirmation') await repo.confirmEvent(item.sourceId);
+        if (item.kind === 'overdue') await repo.completeTask(item.sourceId, me, new Date());
+      }),
+    onAttentionUndo: (item: AttentionItem) =>
+      commit(null, async () => {
+        if (item.kind === 'coverage') await repo.releaseCoverage(item.sourceId);
+        if (item.kind === 'confirmation') await repo.unconfirmEvent(item.sourceId);
+        if (item.kind === 'overdue') await repo.reopenTask(item.sourceId);
+      }),
+    onMailCheck: () => commit(null, () => repo.markMailChecked(me, new Date())),
     onMailUndo: () => commit(null, () => repo.resetMailCheck()),
     onUpdateSchedule: () => {
       setNotice(null);
-      setHouseholdView({ kind: 'person', id: viewingAs });
+      setHouseholdView({ kind: 'person', id: me });
       setTab('household');
     },
   };
 
   const profileActions: ProfileActions = {
-    saveWork: (e) => commit('Shift saved on this device only.', () => repo.saveWorkEntry(e)),
+    saveWork: (e) => commit(savedText('Shift'), () => repo.saveWorkEntry(e)),
     deleteWork: (id) => commit('Shift deleted.', () => repo.deleteWorkEntry(id)),
-    saveUnavailable: (u) => commit('Unavailable time saved on this device only.', () => repo.saveUnavailable(u)),
+    saveUnavailable: (u) => commit(savedText('Unavailable time'), () => repo.saveUnavailable(u)),
     deleteUnavailable: (id) => commit('Unavailable time deleted.', () => repo.deleteUnavailable(id)),
-    saveUpdate: (u) => commit('Update saved on this device only.', () => repo.saveChildUpdate(u)),
+    saveUpdate: (u) => commit(savedText('Update'), () => repo.saveChildUpdate(u)),
     deleteUpdate: (id) => commit('Update deleted.', () => repo.deleteChildUpdate(id)),
-    saveContact: (id, patch) => commit('Details saved on this device only.', () => repo.saveContact(id, patch, viewingAs, new Date())),
-    switchPerson: () => { setNotice(null); signOut(); setTab('home'); setHouseholdView({ kind: 'list' }); },
+    saveContact: (id, patch) => commit(savedText('Details'), () => repo.saveContact(id, patch, me, new Date())),
+    switchPerson: () => { setNotice(null); setTab('home'); setHouseholdView({ kind: 'list' }); void signOut(); },
   };
 
-  return (
+  return withNotice(
     <>
-      {tab === 'home' && <HomeScreen data={data} now={now} chrome={chrome} actions={homeActions} />}
+      {tab === 'home' && <HomeScreen data={data} now={now} chrome={chrome} actions={homeActions} coverageTracked={repo.mode === 'demo'} />}
       {tab === 'calendar' && (
         <PlaceholderScreen
           chrome={chrome}
@@ -146,10 +232,20 @@ export default function App() {
         />
       )}
       {tab === 'household' && (
-        <HouseholdScreen data={data} now={now} chrome={chrome} auth={auth} view={householdView} onView={(v) => { setNotice(null); setHouseholdView(v); }} actions={profileActions} />
+        <HouseholdScreen
+          data={data}
+          now={now}
+          chrome={chrome}
+          auth={auth}
+          email={email}
+          canReviewImport={localRecords}
+          onReviewImport={() => setImportForced(true)}
+          view={householdView}
+          onView={(v) => { setNotice(null); setHouseholdView(v); }}
+          actions={profileActions}
+        />
       )}
       <AddSheet open={addOpen} onClose={closeAdd} />
-      <Notice notice={notice} onDismiss={() => setNotice(null)} />
-    </>
+    </>,
   );
 }

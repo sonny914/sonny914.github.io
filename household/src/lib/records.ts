@@ -19,6 +19,7 @@ export function shiftToEntry(i: ShiftInput, memberId: MemberId, by: MemberId, no
     memberId,
     date: i.date,
     start: i.start,
+    endDate: i.endDate,
     end: i.end,
     repeat: i.repeats ? { weekdays: [...i.weekdays].sort(), until: i.until || undefined } : undefined,
     ...stamp(by, now, prev),

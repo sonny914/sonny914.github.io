@@ -20,13 +20,13 @@ const now = new Date(2026, 9, 1, 14, 0);
 const seed = buildSeed(now);
 const stamp = { createdBy: 'breeze', createdAt: '2026-10-01T09:00', updatedBy: 'breeze', updatedAt: '2026-10-01T09:00' };
 
-const weekly: WorkEntry = { id: 'wk1', memberId: 'adult3', date: '2026-10-02', start: '09:00', end: '17:00', repeat: { weekdays: [1, 3, 5] }, ...stamp };
-const once: WorkEntry = { id: 'wk2', memberId: 'adult3', date: '2026-10-03', start: '10:00', end: '14:00', ...stamp };
+const weekly: WorkEntry = { id: 'wk1', memberId: 'adult3', date: '2026-10-02', start: '09:00', endDate: '2026-10-02', end: '17:00', repeat: { weekdays: [1, 3, 5] }, ...stamp };
+const once: WorkEntry = { id: 'wk2', memberId: 'adult3', date: '2026-10-03', start: '10:00', endDate: '2026-10-03', end: '14:00', ...stamp };
 
 const twinUpdate: ChildUpdate = { id: 'up1', childIds: ['khodi', 'kenzli'], type: 'appointment', title: 'Dentist', note: 'Bring the card', at: '2026-10-06T09:00', ...stamp };
 
 describe('validateShift', () => {
-  const ok = { date: '2026-10-05', start: '08:00', end: '16:00', repeats: false, weekdays: [], until: '' };
+  const ok = { date: '2026-10-05', start: '08:00', endDate: '2026-10-05', end: '16:00', repeats: false, weekdays: [], until: '' };
   it('accepts a normal shift', () => expect(validateShift(ok)).toBeNull());
   it('rejects missing and backwards times and overnight', () => {
     expect(validateShift({ ...ok, date: '' })).toMatch(/date/i);
@@ -36,6 +36,13 @@ describe('validateShift', () => {
   it('requires a day when repeating, and a sensible end date', () => {
     expect(validateShift({ ...ok, repeats: true })).toMatch(/at least one day/i);
     expect(validateShift({ ...ok, repeats: true, weekdays: [1], until: '2026-10-01' })).toMatch(/on or after/i);
+  });
+  it('accepts an overnight shift with an explicit next-day end date, and rejects a missing or too-long one', () => {
+    expect(validateShift({ ...ok, start: '22:00', end: '06:00', endDate: '2026-10-06' })).toBeNull();
+    expect(validateShift({ ...ok, start: '22:00', end: '06:00', endDate: '' })).toMatch(/end date/i);
+    expect(validateShift({ ...ok, start: '22:00', end: '23:00', endDate: '2026-10-06' })).toMatch(/24 hours/i);
+    expect(validateShift({ ...ok, start: '22:00', end: '21:00', endDate: '2026-10-06' })).toBeNull(); // 23 hours
+    expect(validateShift({ ...ok, endDate: '2026-10-04' })).toMatch(/after it starts/i);
   });
 });
 
@@ -67,6 +74,19 @@ describe('work entries', () => {
     expect(new Set(ids).size).toBe(ids.length);
     expect(applyDemoState(seed, s, now).events.find((e) => e.origin?.id === 'wk1')?.start).toContain('T08:00');
     expect(count(deleteWorkEntry(s, 'wk1'))).toBe(0);
+  });
+  it('expands an overnight shift so each occurrence ends the next morning, and describes it', () => {
+    const night: WorkEntry = { ...weekly, id: 'nt', start: '22:00', end: '06:00', endDate: '2026-10-03', repeat: { weekdays: [5] } };
+    const [first] = expandWorkEntry(night, new Date(2026, 9, 1), new Date(2026, 9, 10));
+    expect(first).toMatchObject({ start: '2026-10-02T22:00', end: '2026-10-03T06:00' });
+    expect(describeWorkEntry(night)).toBe('Every Fri · 10:00 PM to 6:00 AM (next day)');
+    expect(describeWorkEntry({ ...night, repeat: undefined })).toBe('Fri, Oct 2 · 10:00 PM to 6:00 AM (next day)');
+  });
+  it('an overnight shift makes the adult busy across midnight when working out who can cover', () => {
+    const s = saveWorkEntry(EMPTY_DEMO_STATE, { ...weekly, id: 'nt2', memberId: 'jay', date: '2026-10-01', start: '22:00', endDate: '2026-10-02', end: '06:00', repeat: undefined });
+    const snap = applyDemoState(seed, s, now);
+    const early = { start: new Date(2026, 9, 2, 1, 0), end: new Date(2026, 9, 2, 2, 0), allDay: false };
+    expect(busyAdults(early, snap.events, ['jay', 'fallon', 'adult3']).jay).toMatchObject({ kind: 'work' });
   });
   it('describes one-off and weekly entries in plain words', () => {
     expect(describeWorkEntry(once)).toBe('Sat, Oct 3 · 10:00 AM to 2:00 PM');

@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useSubmit } from '../hooks/useSubmit';
 import type { UnavailablePeriod } from '../data/types';
 import { Field } from './Field';
 
@@ -39,12 +40,13 @@ export function UnavailableForm({
   onCancel,
 }: {
   period?: UnavailablePeriod;
-  onSave: (i: UnavailableInput) => void;
-  onDelete?: () => void;
+  onSave: (i: UnavailableInput) => void | Promise<void>;
+  onDelete?: () => void | Promise<void>;
   onCancel: () => void;
 }) {
   const [v, setV] = useState<UnavailableInput>(() => toUnavailableInput(period));
   const [error, setError] = useState<string | null>(null);
+  const { busy, run } = useSubmit();
   const set = <K extends keyof UnavailableInput>(k: K, val: UnavailableInput[K]) => setV((p) => ({ ...p, [k]: val }));
   return (
     <form
@@ -52,9 +54,10 @@ export function UnavailableForm({
       noValidate
       onSubmit={(e) => {
         e.preventDefault();
+        if (busy) return;
         const err = validateUnavailable(v);
         setError(err);
-        if (!err) onSave(v);
+        if (!err) void run(() => onSave(v));
       }}
     >
       <div className="form__row">
@@ -84,9 +87,9 @@ export function UnavailableForm({
       </Field>
       {error && <p className="form__error" role="alert">{error}</p>}
       <div className="form__actions">
-        <button type="submit" className="btn btn-primary">Save</button>
-        <button type="button" className="btn btn-quiet" onClick={onCancel}>Cancel</button>
-        {onDelete && <button type="button" className="link-btn" onClick={onDelete}>Delete this period</button>}
+        <button type="submit" className="btn btn-primary" disabled={busy}>{busy ? 'Saving…' : 'Save'}</button>
+        <button type="button" className="btn btn-quiet" onClick={onCancel} disabled={busy}>Cancel</button>
+        {onDelete && <button type="button" className="link-btn" onClick={() => void run(onDelete)} disabled={busy}>Delete this period</button>}
       </div>
     </form>
   );

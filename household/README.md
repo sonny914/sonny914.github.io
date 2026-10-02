@@ -1,7 +1,15 @@
 # The Cottage
 
 Private, phone-first coordination for one home: three adults (Jay, Fallon, Breeze), two children (Khodi, Kenzli) and a trusted backup nanny (Fran).
-**Mock data and demo behaviour only.** No real sign-in, no shared database, no integrations, OCR, calendar sync or notifications. See "What is demo and what is shared" below before relying on anything.
+
+The app runs in one of two modes, chosen by two environment variables:
+
+| | Demo (no variables) | Shared (Supabase configured) |
+|---|---|---|
+| Who you are | Pick a name. **Not a sign-in.** Stored in this browser | **E-mail sign-in.** Your account is linked to exactly one adult by the database; there is nothing to pick |
+| Where data lives | This browser's localStorage (`cottage.demo.v1`) | Your Supabase Postgres, shared by all three adults |
+| Sample events and coverage needs | Generated relative to today | None. A new shared household starts empty |
+| Coverage claims, "confirmed", needs | Work (single device) | **Not shared yet.** The app says so rather than pretending |
 
 ## Run
 
@@ -9,56 +17,85 @@ Private, phone-first coordination for one home: three adults (Jay, Fallon, Breez
 cd household
 npm install
 npm run dev        # http://localhost:5173 (also on your LAN, for a phone)
-npm run validate   # typecheck + oxlint + tests + production build
+npm run validate   # typecheck + oxlint + tests + production build + secret scan
 ```
 
-## What this slice does
+## Set up shared accounts and storage (Supabase)
 
-- **Who are you?** A first screen with Jay, Fallon and Breeze, then **Add your work schedule** (manual entry, or Skip for now). Returning adults go straight to Home. **Switch person** (Household, This device) or the Viewing-as selector changes who is using the app.
-- **Manual schedule:** date, start, end, optional weekly repeat (pick days, optional end date); edit or delete. Same-day only, so overnight shifts are rejected with a message. Shifts appear on Home. Adults edit only their own schedule and unavailable times; unavailable times feed the "who can cover" line on coverage items.
-- **Household profiles:** Jay, Fallon, Breeze, Khodi and Kenzli. Each child has an Updates area. Any adult can add an update (school, appointment, therapy, reminder or general note) with a title, optional note and optional date/time, for one child or both twins. A two-child update is one record. Each record shows who added it and who last edited it. A dated update appears on the shared calendar as one derived event that is rebuilt from the record, so editing never duplicates it.
-- **Fran** is listed under Trusted contacts as the preferred backup nanny. Her details start empty and adults fill them in. Contacting her never counts as confirmed childcare: she is not an assignee, a claim naming her is ignored, and coverage stays open until an adult records who is covering.
-- **Saving:** every write either succeeds (a short "saved on this device only" confirmation) or fails loudly ("Couldn't save…") and keeps the form open with what was typed.
-- Not in this slice: photo/PDF upload and schedule extraction (there is deliberately no upload button), pattern learning, automatic coverage suggestions, notifications.
+Do this in a **new, dedicated Supabase project for The Cottage**. Do not reuse any other project (for example the Quiet Bands ones): this holds a family's schedule and the row-level security is written for this schema only.
 
-## What is demo and what is shared
+1. **Create the project.** supabase.com, New project. Note the project URL and, under Project Settings > API, the **anon / publishable** key.
+2. **Run the migrations**, in order, in the SQL editor (or `supabase db push` with the CLI):
+   - `supabase/migrations/20261003000100_cottage_tables.sql`
+   - `supabase/migrations/20261003000200_cottage_access.sql`
+3. **Invite the three adults.** Copy `supabase/invites.example.sql`, replace the three placeholder addresses with their real e-mail addresses, and run it. This table is the whole allow-list: Jay's address becomes `jay`, Fallon's `fallon`, Breeze's `adult3`. No one else can ever get an account, because a database trigger rejects any e-mail address not in it. Nothing in the app can read or edit this table.
+4. **Auth settings** (Authentication in the dashboard):
+   - Providers > Email: enabled. Turn **off** "Allow new users to sign up" (belt and braces; the trigger already refuses uninvited addresses).
+   - URL Configuration: set **Site URL** to your Netlify URL and add it (and `http://localhost:5173` if you want local development) to **Redirect URLs**.
+   - Email Templates > Magic Link: make sure the body includes `{{ .Token }}` so people can type the 6-digit code as well as click the link.
+   - Users > Add user (or Invite user) for each of the three invited addresses. The sign-in screen only signs in addresses that already exist.
+5. **Environment variables** (Netlify: Site configuration > Environment variables; locally `.env.local`, see `.env.example`):
+   - `VITE_SUPABASE_URL` the project URL, `https://<ref>.supabase.co`
+   - `VITE_SUPABASE_ANON_KEY` the anon / publishable key
+   - Then redeploy. With both set the app runs in shared mode; with neither it is the demo. Setting only one shows an error rather than quietly falling back.
+6. **Never** put the `service_role` or `sb_secret_…` key in Netlify's `VITE_` variables, in the code or in a commit. The app refuses to start with one, and `npm run validate` scans the source and the built bundle for one and fails.
 
-| | This slice | Shared across devices? |
-|---|---|---|
-| Choosing who you are | Name stored in this browser. **Not a sign-in**: no password, no proof of identity | No |
-| Schedules, unavailable times, child updates, Fran's details, coverage and mail actions | Stored in this browser's localStorage (`cottage.demo.v1`) | **No.** Another phone or browser starts empty |
-| Created-by / edited-by | Recorded from the chosen name | Only on this device |
-| Seed data (sample shifts, events, coverage needs) | Generated relative to today on every load | n/a |
+### What the database enforces (it does not trust the browser)
 
-## External setup still required for real accounts and shared saving
+- Only the three invited addresses can have accounts; each is linked to its adult by a row only a trigger can write.
+- All three adults can read everything in the household.
+- An adult can create, edit and delete **only their own** work schedule and unavailable times.
+- Any adult can add or edit an update for either child (one record for both twins). Fran's phone, e-mail and notes can be edited by any adult; her name and role cannot.
+- `created_by` / `updated_by` and times are set by the database from the signed-in account. Whatever the browser sends is ignored.
+- Anonymous visitors can read and write nothing.
+- Shifts have a start date and an explicit end date, so a shift crossing midnight is stored as such. A shift must end after it starts and last at most 24 hours.
 
-Nothing in the repo is configured for a backend (no client, no env vars). To make sign-in real and saving shared you need:
+### Existing records on a device
 
-1. A **new, dedicated Supabase project for The Cottage** (not the Quiet Bands project), or another auth plus database service.
-2. **Auth:** enable e-mail sign-in (magic link), add your Netlify site URL to the allowed redirect URLs, and invite the three adults' e-mail addresses (only invited addresses may sign up).
-3. **Tables** that mirror `src/data/types.ts`: a member link (auth user to `jay` / `fallon` / `adult3`, one user per member), work entries, unavailable periods, child updates, trusted contacts, coverage claims, setup status, mail check. **Row-level security** so only the three linked users can read or write, and writes record `createdBy` / `updatedBy`.
-4. **Environment variables** on Netlify: the project URL and anon key.
-5. **Code:** implement the `'account'` `AuthService` (`src/auth/auth.ts`) and an async repository behind the existing `HouseholdRepository` interface. Components and the member IDs (`jay`, `fallon`, `adult3`, `khodi`, `kenzli`) do not change.
+Records saved by the earlier single-device demo are **never uploaded automatically**. After a person signs in on a device that holds some, a review screen lists them with nothing selected. They choose what to import. Records are saved as added by the signed-in account, only your own schedule can be imported, anything already in the household is skipped (so repeating it is harmless), and Fran's details only fill empty fields. Removing the local copies is a separate, confirmed step. Household > This device > "Review records on this device" reopens it.
 
-Until then, treat everything as a single-device demo.
+### Fran
+
+A shared trusted contact with no availability tracking. Contacting her is not coverage: she is not an assignee and nothing about her changes who is covering.
+
+## Verified and not verified
+
+Verified by automated tests with no credentials. The real migrations run in an in-process Postgres (PGlite) as separate database users, behind the real repository and the real sign-in code, and the UI is driven for two people at once:
+
+- Account isolation: each account resolves to its own adult only; a signed-in stranger with no link sees nothing; anonymous sees nothing; leftover demo choices cannot change identity.
+- Shared updates across two sessions: Jay saves, Fallon sees it after refresh; Breeze updates a child, Jay sees it attributed to Breeze.
+- Fallon cannot edit Jay's schedule, in the UI or by forging a request; forged `created_by` is overwritten.
+- An uninvited e-mail cannot get an account; invites cannot be read or edited by signed-in users.
+- Overnight shifts with an explicit end date, in the form, the rules and the database.
+- A failed save (network or permission) shows an error, saves nothing and keeps everything typed in the form.
+- Demo records are not uploaded without review; import is per item, own-only and idempotent.
+- A service-role key is refused at start-up, and a scan fails the build if one is in the code or bundle.
+
+**Not verified. Blocked until a Supabase project exists:**
+
+- Real Supabase Auth (GoTrue): e-mail delivery, the actual magic link and 6-digit code, the "sign-ups disabled" setting, redirect URL handling and the e-mail template.
+- JWT issuing and verification, and PostgREST itself (HTTP routing, how `upsert` and RPC calls are serialised). The tests use a stand-in that runs the same SQL as the signed-in user.
+- Netlify with the real variables (CSP allows `https://*.supabase.co`; this has not been exercised in a browser against a real project).
+- Real-device behaviour of sign-in links on a phone.
+
+Known limits: other people's changes appear when you return to the tab or within a minute (polling, not realtime). Shifts show on their start day only. Editing a repeating shift edits the whole series. Coverage needs and confirmations, the calendar and the coverage tab are not shared records yet. The Add sheet is still a placeholder. No photo or PDF import.
 
 ## Structure
 
-- `src/auth/auth.ts` the auth seam. Only the `'demo'` implementation exists
-- `src/data/types.ts` domain model, including work entries, unavailable periods, child updates, trusted contacts and audit stamps
-- `src/data/members.ts` the five profiles (Kenzli's initial is "D", for Ducki; Breeze's id stays `adult3`)
-- `src/data/seed.ts` sample household, generated relative to today
-- `src/data/demoState.ts` pure overlay of everything people changed, and `applyDemoState`, which rebuilds derived events by id
-- `src/data/repository.ts` the only storage seam. Writes throw `StorageError` on failure
-- `src/lib/` dates, selectors (today, upcoming, attention, who can cover), `schedules.ts` (shift rules and recurrence), `records.ts` (stamps and attribution)
-- `src/components/`, `src/screens/` UI. Home, Household and first-time setup are functional; Calendar and Coverage are placeholders
+- `supabase/migrations/` tables, row-level security, triggers and RPCs. `supabase/invites.example.sql` the allow-list template
+- `src/config.ts` reads the two public variables; refuses privileged keys. `src/services.ts` builds demo or shared services
+- `src/auth/` the auth seam: `createDemoAuth` (not a sign-in) and `createAccountAuth` (real e-mail sign-in; identity from the database)
+- `src/data/repository.ts` the async repository interface and the local demo repository. `supabaseRepository.ts` the shared one
+- `src/data/types.ts`, `members.ts`, `seed.ts`, `demoState.ts` domain model and demo data. Member IDs (`jay`, `fallon`, `adult3`, `khodi`, `kenzli`) are stable
+- `src/import/plan.ts` the reviewed-import rules
+- `src/db/` test-only PGlite harness for the migrations (not bundled)
+- `src/lib/` dates, selectors, shift rules (`schedules.ts`), attribution
+- `src/components/`, `src/screens/` UI
 
 ## Design
 
-A day board, not a dashboard. Warm white dominates; navy for text, structure and navigation; cornflower for selected and interactive states; coral only for unresolved responsibilities (edge, icon, dot, never text). Buttons are quiet except the one action that is due. Type scale 12 / 14 / 16 / 18 / 24 / 34 (52 on desktop). Palette tokens and their contrast limits are at the top of `src/styles.css`. No dark mode in this slice.
-
-Screenshots (390px phone) are in `docs/screenshots/`.
+A day board, not a dashboard. Warm white dominates; navy for text, structure and navigation; cornflower for selected and interactive states; coral only for unresolved responsibilities (edge, icon, dot, never text). Buttons are quiet except the one action that is due. Type scale 12 / 14 / 16 / 18 / 24 / 34 (52 on desktop). Palette tokens and their contrast limits are at the top of `src/styles.css`.
 
 ## Deploy (Netlify)
 
-New site from the repo, **Base directory** `household`. The `netlify.toml` supplies the build command, publish directory, Node 22, noindex and security headers. The URL is public, so add password protection or Identity before putting real household data in.
+New site from the repo, **Base directory** `household`. The `netlify.toml` supplies the build command, publish directory, Node 22, noindex and security headers (including a CSP that allows only this origin and `https://*.supabase.co`). Add the two environment variables above. In demo mode the URL is public and the data is local to each browser; in shared mode only the three invited adults can sign in.

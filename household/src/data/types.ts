@@ -145,7 +145,11 @@ export interface Audit {
 
 // ---- Manual work schedule ---------------------------------------------------
 
-/** One shift, or a weekly pattern of shifts. Same-day only: nobody works overnight here. */
+/**
+ * One shift, or a weekly pattern of shifts. A shift may cross midnight: the end date is explicit
+ * (endDate may be the next day). For a weekly pattern, endDate - date is how many days each
+ * occurrence runs over.
+ */
 export interface WorkEntry extends Audit {
   id: string;
   memberId: MemberId;
@@ -153,6 +157,8 @@ export interface WorkEntry extends Audit {
   date: string;
   /** "HH:mm" */
   start: string;
+  /** Last date of the first (or only) shift, "YYYY-MM-DD". */
+  endDate: string;
   end: string;
   /** Repeats every week on these weekdays (0 = Sunday), optionally until a date. */
   repeat?: { weekdays: number[]; until?: string };
@@ -210,7 +216,8 @@ export interface HouseholdSnapshot {
   coverageRequests: CoverageRequest[];
   reminders: Reminder[];
   uploadedSchedules: UploadedSchedule[];
-  mailCheck: MailCheck;
+  /** null until somebody has logged a check (shared mode starts empty). */
+  mailCheck: MailCheck | null;
   workEntries: WorkEntry[];
   unavailable: UnavailablePeriod[];
   childUpdates: ChildUpdate[];
