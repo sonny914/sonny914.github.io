@@ -343,3 +343,8 @@ button { cursor: pointer; }
 .import__done { font-weight: 700; font-size: var(--t-sm); color: var(--ink); }
 .viewing-as__name { font-weight: 700; font-size: var(--t-md); min-height: 44px; display: inline-flex; align-items: center; border-bottom: 2px solid var(--rule); }
 .row__next-day { font-size: var(--t-sm); color: var(--muted); }
+
+/* Evening-before trash and recycling prompt: a quiet ruled strip, no attention colour (nothing is overdue). */
+.pickup { margin-bottom: 20px; padding: 12px 0; border-top: 1px solid var(--rule); border-bottom: 1px solid var(--rule); }
+.pickup__title { font-size: var(--t-lg); font-weight: 800; line-height: 1.25; }
+.pickup__detail { margin-top: 3px; color: var(--muted); font-size: var(--t-sm); }

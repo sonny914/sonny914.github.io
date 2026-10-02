@@ -74,6 +74,19 @@ describe('The Cottage home', () => {
   });
 });
 
+describe('Trash and recycling', () => {
+  it('is quiet at 2 PM Thursday, then reminds the evening before Friday pickup', async () => {
+    const view = render(<App />);
+    expect(screen.queryByRole('region', { name: /trash and recycling/i })).not.toBeInTheDocument();
+    view.unmount();
+    vi.setSystemTime(new Date(2026, 9, 1, 19, 0)); // Thursday 7 PM
+    render(<App />);
+    const strip = screen.getByRole('region', { name: /trash and recycling/i });
+    expect(strip).toHaveTextContent('Tonight: put out the trash and recycling');
+    expect(strip).toHaveTextContent('Pickup is tomorrow, Friday.');
+  });
+});
+
 describe('Pickup clarity', () => {
   it('tells the viewer they are at work and relabels the action instead of offering a plain "I\u2019ll cover"', async () => {
     render(<App />);

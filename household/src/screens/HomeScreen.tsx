@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react';
 import { MailCard } from '../components/MailCard';
+import { PickupReminder } from '../components/PickupReminder';
 import { MemberFilter } from '../components/MemberFilter';
 import { NeedsAttention } from '../components/NeedsAttention';
 import { type Chrome, Shell } from '../components/Shell';
@@ -7,6 +8,7 @@ import { TodayTimeline } from '../components/TodayTimeline';
 import { UpcomingList } from '../components/UpcomingList';
 import type { HouseholdSnapshot } from '../data/types';
 import { formatLongDate, formatTime, greeting, parseLocal } from '../lib/dates';
+import { birthdayEvents } from '../lib/routines';
 import {
   type AttentionItem,
   type MemberFilter as Filter,
@@ -42,12 +44,15 @@ export function HomeScreen({
   const filterName = data.members.find((m) => m.id === filter)?.name;
 
   const view = useMemo(() => {
-    const todayAll = eventsOnDay(data.events, now, 'all');
+    // Birthdays are rules, not records, so they join the board without being stored.
+    const nameOf = (id: string) => data.members.find((m) => m.id === id)?.name ?? id;
+    const events = [...data.events, ...birthdayEvents(now, 8, nameOf)];
+    const todayAll = eventsOnDay(events, now, 'all');
     return {
       todayAll,
       attentionAll: attentionItems(data, now, 'all').length,
-      today: eventsOnDay(data.events, now, filter),
-      upcoming: upcomingByDay(data.events, now, filter),
+      today: eventsOnDay(events, now, filter),
+      upcoming: upcomingByDay(events, now, filter),
       attention: attentionItems(data, now, filter),
     };
   }, [data, now, filter]);
@@ -79,6 +84,7 @@ export function HomeScreen({
           <MemberFilter members={data.members} value={filter} onChange={setFilter} />
         </div>
         <div className="board-layout__primary">
+          <PickupReminder now={now} />
           <NeedsAttention
             items={view.attention}
             members={data.members}
