@@ -6,12 +6,14 @@ import { ContactForm } from '../components/ContactForm';
 import { EmptyState } from '../components/EmptyState';
 import { type Chrome, Shell } from '../components/Shell';
 import { Sheet } from '../components/Sheet';
+import { ScheduleUpload } from '../components/ScheduleUpload';
 import { ShiftForm } from '../components/ShiftForm';
 import { UnavailableForm } from '../components/UnavailableForm';
 import type { ChildUpdate, HouseholdMember, HouseholdSnapshot, MemberId, TrustedContact, UnavailablePeriod, WorkEntry } from '../data/types';
 import { formatWhen, parseLocal } from '../lib/dates';
 import { attribution, inputToPeriod, inputToUpdate, shiftToEntry } from '../lib/records';
 import { describeWorkEntry, updateTypeLabel } from '../lib/schedules';
+import type { ScheduleReader } from '../lib/scheduleUpload';
 
 export type HouseholdView = { kind: 'list' } | { kind: 'person'; id: MemberId } | { kind: 'contact'; id: string };
 
@@ -30,6 +32,7 @@ export interface ProfileActions {
 
 type Editing =
   | { kind: 'shift'; entry?: WorkEntry }
+  | { kind: 'upload' }
   | { kind: 'away'; period?: UnavailablePeriod }
   | { kind: 'update'; update?: ChildUpdate }
   | { kind: 'contact' };
@@ -45,6 +48,7 @@ export function HouseholdScreen({
   view,
   onView,
   actions,
+  readSchedule,
 }: {
   data: HouseholdSnapshot;
   now: Date;
@@ -57,6 +61,8 @@ export function HouseholdScreen({
   view: HouseholdView;
   onView: (v: HouseholdView) => void;
   actions: ProfileActions;
+  /** Reads a PDF or photo of a schedule. Absent in the demo. */
+  readSchedule?: ScheduleReader;
 }) {
   const me = data.members.find((m) => m.id === chrome.viewingAs);
   const person = view.kind === 'person' ? data.members.find((m) => m.id === view.id) : undefined;
@@ -72,7 +78,7 @@ export function HouseholdScreen({
     <Shell chrome={chrome} eyebrow="The Cottage" heading={heading} summary={summary}>
       {view.kind === 'list' && <PeopleList data={data} me={me} auth={auth} email={email} canReviewImport={canReviewImport} onReviewImport={onReviewImport} onView={onView} onSwitch={actions.switchPerson} />}
       {person && person.role === 'adult' && (
-        <AdultProfile data={data} now={now} person={person} me={me} onBack={() => onView({ kind: 'list' })} actions={actions} />
+        <AdultProfile data={data} now={now} person={person} me={me} onBack={() => onView({ kind: 'list' })} actions={actions} readSchedule={readSchedule} />
       )}
       {person && person.role === 'child' && (
         <ChildProfile data={data} now={now} person={person} me={me} onBack={() => onView({ kind: 'list' })} actions={actions} />
@@ -189,6 +195,7 @@ function AdultProfile({
   me,
   onBack,
   actions,
+  readSchedule,
 }: {
   data: HouseholdSnapshot;
   now: Date;
@@ -196,6 +203,7 @@ function AdultProfile({
   me?: HouseholdMember;
   onBack: () => void;
   actions: ProfileActions;
+  readSchedule?: ScheduleReader;
 }) {
   const [editing, setEditing] = useState<Editing | null>(null);
   const mine = person.id === me?.id;
@@ -232,7 +240,12 @@ function AdultProfile({
             {entries.length ? 'Add a shift' : 'Update my schedule'}
           </button>
         )}
-        {mine && <p className="account__note">Photo and PDF upload, and reading a posted schedule, come in the next update.</p>}
+        {mine && readSchedule && (
+          <button type="button" className="btn btn-quiet entries__add" onClick={() => setEditing({ kind: 'upload' })}>
+            Upload a schedule (PDF or photo)
+          </button>
+        )}
+        {mine && !readSchedule && <p className="account__note">Uploading a PDF or photo works once shared accounts are set up.</p>}
       </section>
 
       <section className="section" aria-labelledby="away-h">
@@ -263,6 +276,18 @@ function AdultProfile({
             onCancel={close}
             onSave={async (i) => { if (await actions.saveWork(shiftToEntry(i, person.id, me?.id ?? person.id, now, editing.entry))) close(); }}
             onDelete={editing.entry ? async () => { if (await actions.deleteWork(editing.entry!.id)) close(); } : undefined}
+          />
+        </Sheet>
+      )}
+      {editing?.kind === 'upload' && readSchedule && (
+        <Sheet title="Upload a schedule" onClose={close}>
+          <ScheduleUpload
+            reader={readSchedule}
+            memberName={person.name}
+            existing={entries}
+            now={now}
+            onSave={(i) => actions.saveWork(shiftToEntry(i, person.id, me?.id ?? person.id, new Date()))}
+            onDone={close}
           />
         </Sheet>
       )}

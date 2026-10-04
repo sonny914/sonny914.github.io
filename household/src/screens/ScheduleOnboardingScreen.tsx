@@ -1,9 +1,11 @@
 import { useState } from 'react';
+import { ScheduleUpload } from '../components/ScheduleUpload';
 import { ShiftForm } from '../components/ShiftForm';
 import type { HouseholdMember, WorkEntry } from '../data/types';
 import { Field } from '../components/Field';
 import { shiftToEntry } from '../lib/records';
 import { describeWorkEntry } from '../lib/schedules';
+import type { ScheduleReader } from '../lib/scheduleUpload';
 
 const MONTHS = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
 const DAYS_IN_MONTH = [31, 29, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];
@@ -19,6 +21,7 @@ export function ScheduleOnboardingScreen({
   where,
   askBirthday,
   onSaveBirthday,
+  readSchedule,
 }: {
   me: HouseholdMember;
   entries: WorkEntry[];
@@ -31,8 +34,11 @@ export function ScheduleOnboardingScreen({
   /** True when the household doesn't know this adult's birthday yet. */
   askBirthday: boolean;
   onSaveBirthday: (month: number, day: number) => Promise<boolean>;
+  /** Reads a PDF or photo of a schedule. Absent in the demo. */
+  readSchedule?: ScheduleReader;
 }) {
   const [adding, setAdding] = useState(false);
+  const [uploading, setUploading] = useState(false);
   const [month, setMonth] = useState('');
   const [day, setDay] = useState('');
   const [bdayError, setBdayError] = useState<string | null>(null);
@@ -99,7 +105,16 @@ export function ScheduleOnboardingScreen({
         </ul>
       )}
 
-      {adding ? (
+      {uploading && readSchedule ? (
+        <ScheduleUpload
+          reader={readSchedule}
+          memberName={me.name}
+          existing={mine}
+          now={now}
+          onSave={(i) => onSave(shiftToEntry(i, me.id, me.id, new Date()))}
+          onDone={() => setUploading(false)}
+        />
+      ) : adding ? (
         <ShiftForm
           submitLabel="Save shift"
           onCancel={() => setAdding(false)}
@@ -111,20 +126,24 @@ export function ScheduleOnboardingScreen({
         <div className="form__actions">
           {mine.length === 0 ? (
             <>
-              <button type="button" className="btn btn-primary" onClick={() => setAdding(true)}>Add my shifts</button>
+              {readSchedule && <button type="button" className="btn btn-primary" onClick={() => setUploading(true)}>Upload a schedule</button>}
+              <button type="button" className={readSchedule ? 'btn btn-quiet' : 'btn btn-primary'} onClick={() => setAdding(true)}>Add my shifts</button>
               <button type="button" className="btn btn-quiet" onClick={() => void onSkip()}>Skip for now</button>
             </>
           ) : (
             <>
               <button type="button" className="btn btn-primary" onClick={() => void onFinish()}>Done</button>
               <button type="button" className="btn btn-quiet" onClick={() => setAdding(true)}>Add another shift</button>
+              {readSchedule && <button type="button" className="btn btn-quiet" onClick={() => setUploading(true)}>Upload a schedule</button>}
             </>
           )}
         </div>
       )}
 
       <p className="gate__note">
-        Photo and PDF upload, and reading a posted schedule for you, come in the next update. For now shifts are entered by hand.
+        {readSchedule
+          ? 'Upload a PDF, screenshot or photo and check the shifts before they save, or enter them by hand. '
+          : 'Photo and PDF upload, and reading a posted schedule for you, come in the next update. For now shifts are entered by hand. '}
         {where}
       </p>
     </main>

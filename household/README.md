@@ -59,6 +59,18 @@ Records saved by the earlier single-device demo are **never uploaded automatical
 
 Trash (Tuesday and Friday) and recycling (Friday) reminders appear on Home from 5 PM the evening before until 10 AM on pickup day. Starting birthdays (Jay, Fallon, Khodi and Kenzli) and the pickup days are rules in `src/lib/routines.ts`. Any adult whose birthday isn't known (today, Breeze) is asked for it, month and day only, during first-time setup, and can skip. Each adult can set only their own.
 
+### Uploading a schedule (PDF or photo)
+
+In shared mode, your own Work schedule (and first-time setup) has **Upload a schedule**. Pick a PDF, a screenshot or a photo; photos are shrunk on the phone to a JPEG first. The file goes to the Netlify edge function `netlify/edge-functions/read-schedule.ts` (`/api/read-schedule`), which:
+
+- refuses anyone without a signed-in Cottage session (it checks the Supabase token with the project's `/auth/v1/user`);
+- sends the file to Claude with the server-side `ANTHROPIC_API_KEY` and asks only for the uploader's shifts;
+- returns the shifts. **It saves nothing and stores no file.**
+
+The app then lists every shift read, with notes about anything unclear. New, valid shifts start ticked; ones already saved or that don't make sense start unticked; any can be edited. Only the ticked ones are saved, through the same path and database rules as typing them in (only your own schedule).
+
+Server settings (Netlify environment variables, Functions scope): `ANTHROPIC_API_KEY` (required), `ANTHROPIC_MODEL` (optional, default `claude-sonnet-5-5`). The edge function also reads `VITE_SUPABASE_URL` and `VITE_SUPABASE_ANON_KEY`. The schedule image leaves the household's devices and goes to Anthropic to be read. The demo has no upload.
+
 ### Fran
 
 A shared trusted contact with no availability tracking. Contacting her is not coverage: she is not an assignee and nothing about her changes who is covering.
@@ -83,7 +95,7 @@ Verified by automated tests with no credentials. The real migrations run in an i
 - Netlify with the real variables (CSP allows `https://*.supabase.co`; this has not been exercised in a browser against a real project).
 - Real-device behaviour of sign-in links on a phone.
 
-Known limits: other people's changes appear when you return to the tab or within a minute (polling, not realtime). Shifts show on their start day only. Editing a repeating shift edits the whole series. Coverage needs and confirmations, the calendar and the coverage tab are not shared records yet. The Add sheet is still a placeholder. No photo or PDF import.
+Known limits: other people's changes appear when you return to the tab or within a minute (polling, not realtime). Shifts show on their start day only. Editing a repeating shift edits the whole series. Coverage needs and confirmations, the calendar and the coverage tab are not shared records yet. The Add sheet is still a placeholder. Schedule upload reads one file at a time and saves one-off shifts (no repeating patterns).
 
 ## Structure
 

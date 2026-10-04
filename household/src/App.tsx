@@ -36,7 +36,7 @@ const wasReviewed = (me: string) => {
   }
 };
 
-function Cottage({ services: { repo, auth } }: { services: Services }) {
+function Cottage({ services: { repo, auth, readSchedule } }: { services: Services }) {
   const now = useNow();
   const [tab, setTab] = useState<TabId>('home');
   const [addOpen, setAddOpen] = useState(false);
@@ -165,6 +165,7 @@ function Cottage({ services: { repo, auth } }: { services: Services }) {
         onSave={(e) => commit(savedText('Shift'), () => repo.saveWorkEntry(e))}
         onFinish={() => commit(null, () => repo.completeSetup(myProfile.id, 'done'))}
         onSkip={() => commit(null, () => repo.completeSetup(myProfile.id, 'skipped'))}
+        readSchedule={readSchedule}
       />,
     );
   }
@@ -245,6 +246,7 @@ function Cottage({ services: { repo, auth } }: { services: Services }) {
           view={householdView}
           onView={(v) => { setNotice(null); setHouseholdView(v); }}
           actions={profileActions}
+          readSchedule={readSchedule}
         />
       )}
       <AddSheet open={addOpen} onClose={closeAdd} />
