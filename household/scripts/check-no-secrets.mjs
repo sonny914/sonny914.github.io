@@ -19,6 +19,9 @@ function scan(file) {
   const text = readFileSync(file, 'utf8');
   if (/sb_secret_[A-Za-z0-9_-]{8,}/.test(text)) problems.push(`${file}: contains an sb_secret_ key`);
   if (/SERVICE_ROLE_KEY\s*=\s*\S+/i.test(text)) problems.push(`${file}: assigns a SERVICE_ROLE_KEY`);
+  // The schedule reader's Anthropic key lives on the server only. A VITE_ name would ship it to every browser.
+  if (/sk-ant-[A-Za-z0-9_-]{20,}/.test(text)) problems.push(`${file}: contains an Anthropic API key`);
+  if (/VITE_ANTHROPIC/i.test(text)) problems.push(`${file}: names a VITE_ANTHROPIC variable; the Anthropic key must never be a VITE_ variable`);
   for (const m of text.matchAll(jwt)) if (role(m[1]) === 'service_role') problems.push(`${file}: contains a service_role JWT`);
 }
 function walk(p) {
@@ -29,7 +32,7 @@ function walk(p) {
 roots.forEach(walk);
 
 if (problems.length) {
-  console.error('A privileged database key must never be in browser code:\n' + problems.map((p) => '  ' + p).join('\n'));
+  console.error('A privileged key must never be in browser code:\n' + problems.map((p) => '  ' + p).join('\n'));
   process.exit(1);
 }
 console.log('check-no-secrets: no privileged keys found.');

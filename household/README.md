@@ -40,6 +40,7 @@ Do this in a **new, dedicated Supabase project for The Cottage**. Do not reuse a
    - `VITE_SUPABASE_ANON_KEY` the anon / publishable key
    - Then redeploy. With both set the app runs in shared mode; with neither it is the demo. Setting only one shows an error rather than quietly falling back.
 6. **Never** put the `service_role` or `sb_secret_…` key in Netlify's `VITE_` variables, in the code or in a commit. The app refuses to start with one, and `npm run validate` scans the source and the built bundle for one and fails.
+7. **Schedule upload (optional).** Add `ANTHROPIC_API_KEY` on Netlify with the **Functions** scope and redeploy. It is read only by the edge function; the browser never sees it, and the scanner also refuses an Anthropic key or any `VITE_ANTHROPIC…` name in browser code. Without it, Upload a schedule says reading isn't set up yet, and shifts can still be typed in.
 
 ### What the database enforces (it does not trust the browser)
 
@@ -88,12 +89,9 @@ Verified by automated tests with no credentials. The real migrations run in an i
 - Demo records are not uploaded without review; import is per item, own-only and idempotent.
 - A service-role key is refused at start-up, and a scan fails the build if one is in the code or bundle.
 
-**Not verified. Blocked until a Supabase project exists:**
+**Verified in real use (October 2026):** the three adults signed in by e-mail link or code from the Netlify site, each landing as their own profile. Shifts and setup were saved through the real Supabase API with the database stamping the signed-in account on every row (checked against the live tables: every entry's `created_by` is its owner). The Netlify CSP and the sign-in redirect work on real phones. Invite-only is enforced by the database trigger whatever the dashboard's sign-up setting says.
 
-- Real Supabase Auth (GoTrue): e-mail delivery, the actual magic link and 6-digit code, the "sign-ups disabled" setting, redirect URL handling and the e-mail template.
-- JWT issuing and verification, and PostgREST itself (HTTP routing, how `upsert` and RPC calls are serialised). The tests use a stand-in that runs the same SQL as the signed-in user.
-- Netlify with the real variables (CSP allows `https://*.supabase.co`; this has not been exercised in a browser against a real project).
-- Real-device behaviour of sign-in links on a phone.
+**Not verified yet:** schedule upload end to end against the live site (needs `ANTHROPIC_API_KEY` on Netlify; the reader's parsing and review flow are covered by tests with a fake reader). Netlify edge functions must answer within about 40 seconds, so a very long PDF could time out; a photo of one week reads in a few seconds.
 
 Known limits: other people's changes appear when you return to the tab or within a minute (polling, not realtime). Shifts show on their start day only. Editing a repeating shift edits the whole series. Coverage needs and confirmations, the calendar and the coverage tab are not shared records yet. The Add sheet is still a placeholder. Schedule upload reads one file at a time and saves one-off shifts (no repeating patterns).
 
