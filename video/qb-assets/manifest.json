@@ -1,0 +1,70 @@
+{
+ "tools": {
+  "chatgpt": {
+   "name": "ChatGPT",
+   "mark": {
+    "file": "tools/chatgpt/mark.svg",
+    "source": "npm @lobehub/icons-static-svg@1.95.1 icons/openai.svg",
+    "owner": "official (product owner)",
+    "license": "MIT (package); mark is a trademark of its owner, used to identify the product"
+   }
+  },
+  "claude-code": {
+   "name": "Claude Code",
+   "mark": {
+    "file": "tools/claude-code/mark.svg",
+    "source": "npm simple-icons@16.33.0 icons/claude.svg",
+    "owner": "official (product owner)",
+    "license": "CC0-1.0 (collection); mark is a trademark of its owner, used to identify the product"
+   },
+   "demo": {
+    "file": "tools/claude-code/demo.mp4",
+    "source": "https://github.com/anthropics/claude-code demo.gif @ 7779afb12e36",
+    "owner": "official (product owner)",
+    "license": "Official public product demo; terminal window only; the wallpaper around it is multicoloured and breaks the palette",
+    "reel_defaults": {
+     "start": 0.6,
+     "end": 6.6,
+     "rate": 2.5,
+     "crop": "500:889:2:1"
+    }
+   }
+  },
+  "gemini": {
+   "name": "Gemini",
+   "mark": {
+    "file": "tools/gemini/mark.svg",
+    "source": "npm simple-icons@16.33.0 icons/googlegemini.svg",
+    "owner": "official (product owner)",
+    "license": "CC0-1.0 (collection); mark is a trademark of its owner, used to identify the product"
+   }
+  },
+  "supabase": {
+   "name": "Supabase",
+   "mark": {
+    "file": "tools/supabase/mark.svg",
+    "source": "npm simple-icons@16.33.0 icons/supabase.svg",
+    "owner": "official (product owner)",
+    "license": "CC0-1.0 (collection); mark is a trademark of its owner, used to identify the product"
+   }
+  },
+  "netlify": {
+   "name": "Netlify",
+   "mark": {
+    "file": "tools/netlify/mark.svg",
+    "source": "npm simple-icons@16.33.0 icons/netlify.svg",
+    "owner": "official (product owner)",
+    "license": "CC0-1.0 (collection); mark is a trademark of its owner, used to identify the product"
+   }
+  },
+  "claude": {
+   "name": "Claude",
+   "mark": {
+    "file": "tools/claude/mark.svg",
+    "source": "npm simple-icons@16.33.0 icons/claude.svg",
+    "owner": "official (product owner)",
+    "license": "CC0-1.0 (collection); mark is a trademark of its owner, used to identify the product"
+   }
+  }
+ }
+}

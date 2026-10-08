@@ -1,0 +1,34 @@
+@font-face { font-family: "Space Grotesk"; font-weight: 400; src: url("assets/fonts/space-grotesk-latin-400-normal.woff2") format("woff2"); }
+@font-face { font-family: "Space Grotesk"; font-weight: 700; src: url("assets/fonts/space-grotesk-latin-700-normal.woff2") format("woff2"); }
+:root { --ink: #0b0a09; --cream: #efe6d2; --orange: #ff6a1a; }
+* { margin: 0; padding: 0; box-sizing: border-box; }
+html, body { margin: 0; overflow: hidden; background: #0b0a09; }
+#root { position: relative; width: 100%; height: 100%; overflow: hidden; background: var(--ink); font-family: "Space Grotesk", sans-serif; }
+#aroll-wrap { position: absolute; left: 0; top: 0; width: 1080px; height: 1920px; transform-origin: 540px __PIVOT__px; }
+#aroll { display: block; width: 1080px; height: 1920px; object-fit: cover; }
+.col { position: absolute; top: 0; bottom: 0; width: 470px; background: var(--ink); opacity: 0; z-index: 3; }
+.col.left { left: 0; border-right: 1px solid rgba(239,230,210,.22); }
+.col.right { right: 0; border-left: 1px solid rgba(239,230,210,.22); }
+.col-inner { position: absolute; left: 0; right: 0; top: 660px; display: flex; flex-direction: column; align-items: center; gap: 44px; }
+.col .mark { display: block; width: 260px; height: 260px; fill: var(--cream); }
+.label { display: flex; align-items: center; gap: 14px; padding: 12px 20px 12px 16px; background: var(--ink); border: 1px solid rgba(239,230,210,.25); border-radius: 10px; color: var(--cream); font-size: 40px; font-weight: 400; letter-spacing: .01em; }
+.label.on-full { font-size: 38px; padding: 10px 20px 10px 16px; position: absolute; left: 64px; top: __LABEL_TOP__px; }
+.label i { display: block; width: 14px; height: 14px; background: var(--orange); }
+.ins { position: absolute; inset: 0; opacity: 0; z-index: 4; overflow: hidden; background: var(--ink); }
+.ins video { display: block; width: 1080px; height: 1920px; transform-origin: 30% 20%; }
+#pip { position: absolute; opacity: 0; z-index: 6; overflow: hidden; border-radius: 22px; border: 2px solid rgba(239,230,210,.35); background: var(--ink); }
+#pip.small { left: 686px; top: 620px; width: 334px; height: 500px; }
+#pip.big { left: 548px; top: 300px; width: 472px; height: 800px; }
+#pip video { position: absolute; display: block; width: 1080px; height: 1920px; transform-origin: 0 0; }
+#pip.small video { transform: translate(-119px, -212px) scale(.55); }
+#pip.big video { transform: translate(-181px, -300px) scale(.8); }
+#recap { position: absolute; inset: 0; opacity: 0; z-index: 5; background: var(--ink); }
+#stack { position: absolute; left: 70px; top: 360px; width: 440px; }
+#stack .row { display: flex; align-items: center; gap: 26px; height: 132px; padding-left: 34px; }
+#stack .mark { width: 78px; height: 78px; fill: var(--cream); flex: none; }
+#stack span { color: var(--cream); font-size: 44px; font-weight: 700; letter-spacing: -.01em; }
+#stackline { position: absolute; left: 0; top: 18px; width: 4px; background: var(--orange); transform-origin: 50% 0; }
+.cue { position: absolute; left: 60px; right: 60px; top: __CAPTION_TOP__px; z-index: 8; display: flex; justify-content: center; }
+.plate { display: inline-flex; flex-direction: column; align-items: center; gap: 4px; padding: 16px 26px 18px; background: rgba(11,10,9,.9); border-radius: 14px; }
+.ln { display: block; color: var(--cream); font-size: 52px; font-weight: 700; line-height: 1.12; letter-spacing: -.012em; max-width: 900px; text-align: center; text-wrap: balance; }
+.ln em { font-style: normal; color: var(--orange); }

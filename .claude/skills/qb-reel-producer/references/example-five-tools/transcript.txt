@@ -1,0 +1,30 @@
+QUIET BANDS · five tools, one job · transcript
+
+Timestamps are in the finished reel. Source times are from the original recording.
+
+[00:00.000]  AI could build damn near anything now.    (source 12.10s)
+[00:02.483]  So why the fuck do I need five different tools?    (source 14.97s)
+[00:05.617]  Because they don't do the same job.    (source 19.97s)
+[00:07.850]  ChatGPT,    (source 30.80s)
+[00:09.183]  figure out what I'm building.    (source 32.70s)
+[00:10.716]  Claude Code,    (source 35.33s)
+[00:11.817]  build it.    (source 37.07s)
+[00:12.617]  Gemini,    (source 39.47s)
+[00:13.450]  help me see it.    (source 41.17s)
+[00:14.616]  Supabase,    (source 43.70s)
+[00:15.683]  make it remember shit.    (source 45.67s)
+[00:17.083]  Netlify,    (source 48.60s)
+[00:18.150]  put it online.    (source 50.90s)
+[00:19.317]  That's my stack.    (source 55.00s)
+[00:20.350]  Five tools,    (source 56.77s)
+[00:21.516]  one job.    (source 58.37s)
+[00:22.550]  Get this shit out my head    (source 60.10s)
+[00:24.016]  and onto the internet.    (source 61.80s)
+
+Clean text:
+
+AI could build damn near anything now. So why the fuck do I need five different tools? Because they don't do the same job.
+
+ChatGPT, figure out what I'm building. Claude Code, build it. Gemini, help me see it. Supabase, make it remember shit. Netlify, put it online.
+
+That's my stack. Five tools, one job. Get this shit out my head and onto the internet.

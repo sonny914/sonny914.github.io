@@ -1,0 +1,372 @@
+{
+ "_about": "Canonical names, ASR misspellings, and official logo sources. Extend when a new tool is mentioned. Aliases are matched case-insensitively on word boundaries after transcription. 'pkg' is an npm package fetched once into ~/.cache/qb-reel/npm; marks are rendered in QB cream.",
+ "tools": {
+  "chatgpt": {
+   "name": "ChatGPT",
+   "aliases": [
+    "chat gpt",
+    "chad gpt",
+    "chat g p t",
+    "chatgbt",
+    "chat gbt"
+   ],
+   "logo": {
+    "pkg": "@lobehub/icons-static-svg",
+    "slug": "openai"
+   },
+   "kind": "tool"
+  },
+  "claude-code": {
+   "name": "Claude Code",
+   "aliases": [
+    "claude cold",
+    "clawed code",
+    "cloud code",
+    "claud code",
+    "clod code"
+   ],
+   "logo": {
+    "pkg": "simple-icons",
+    "slug": "claude"
+   },
+   "kind": "tool",
+   "footage": {
+    "repo": "https://github.com/anthropics/claude-code",
+    "path": "demo.gif",
+    "prep": "crop=1480:890:44:58",
+    "note": "terminal window only; the wallpaper around it is multicoloured and breaks the palette",
+    "reel_defaults": {
+     "start": 0.6,
+     "end": 6.6,
+     "rate": 2.5,
+     "crop": "500:889:2:1"
+    }
+   }
+  },
+  "claude": {
+   "name": "Claude",
+   "aliases": [
+    "clawed",
+    "claud"
+   ],
+   "logo": {
+    "pkg": "simple-icons",
+    "slug": "claude"
+   },
+   "kind": "tool"
+  },
+  "anthropic": {
+   "name": "Anthropic",
+   "aliases": [
+    "anthropics"
+   ],
+   "logo": {
+    "pkg": "simple-icons",
+    "slug": "anthropic"
+   },
+   "kind": "company"
+  },
+  "gemini": {
+   "name": "Gemini",
+   "aliases": [
+    "jemini",
+    "gemany",
+    "gemeni",
+    "google gemini"
+   ],
+   "logo": {
+    "pkg": "simple-icons",
+    "slug": "googlegemini"
+   },
+   "kind": "tool"
+  },
+  "supabase": {
+   "name": "Supabase",
+   "aliases": [
+    "superbase",
+    "super base",
+    "supa base",
+    "super bass",
+    "soupabase"
+   ],
+   "logo": {
+    "pkg": "simple-icons",
+    "slug": "supabase"
+   },
+   "kind": "tool"
+  },
+  "netlify": {
+   "name": "Netlify",
+   "aliases": [
+    "net lify",
+    "netlifly",
+    "nettlify",
+    "netify"
+   ],
+   "logo": {
+    "pkg": "simple-icons",
+    "slug": "netlify"
+   },
+   "kind": "tool"
+  },
+  "cursor": {
+   "name": "Cursor",
+   "aliases": [],
+   "logo": {
+    "pkg": "simple-icons",
+    "slug": "cursor"
+   },
+   "kind": "tool"
+  },
+  "vercel": {
+   "name": "Vercel",
+   "aliases": [
+    "versel",
+    "vercell"
+   ],
+   "logo": {
+    "pkg": "simple-icons",
+    "slug": "vercel"
+   },
+   "kind": "tool"
+  },
+  "github": {
+   "name": "GitHub",
+   "aliases": [
+    "git hub"
+   ],
+   "logo": {
+    "pkg": "simple-icons",
+    "slug": "github"
+   },
+   "kind": "tool"
+  },
+  "figma": {
+   "name": "Figma",
+   "aliases": [],
+   "logo": {
+    "pkg": "simple-icons",
+    "slug": "figma"
+   },
+   "kind": "tool"
+  },
+  "notion": {
+   "name": "Notion",
+   "aliases": [],
+   "logo": {
+    "pkg": "simple-icons",
+    "slug": "notion"
+   },
+   "kind": "tool"
+  },
+  "perplexity": {
+   "name": "Perplexity",
+   "aliases": [],
+   "logo": {
+    "pkg": "simple-icons",
+    "slug": "perplexity"
+   },
+   "kind": "tool"
+  },
+  "elevenlabs": {
+   "name": "ElevenLabs",
+   "aliases": [
+    "eleven labs",
+    "11 labs",
+    "11labs"
+   ],
+   "logo": {
+    "pkg": "simple-icons",
+    "slug": "elevenlabs"
+   },
+   "kind": "tool"
+  },
+  "midjourney": {
+   "name": "Midjourney",
+   "aliases": [
+    "mid journey"
+   ],
+   "logo": {
+    "pkg": "@lobehub/icons-static-svg",
+    "slug": "midjourney"
+   },
+   "kind": "tool"
+  },
+  "runway": {
+   "name": "Runway",
+   "aliases": [
+    "runway ml"
+   ],
+   "logo": {
+    "pkg": "@lobehub/icons-static-svg",
+    "slug": "runway"
+   },
+   "kind": "tool"
+  },
+  "capcut": {
+   "name": "CapCut",
+   "aliases": [
+    "cap cut"
+   ],
+   "logo": {
+    "pkg": "@lobehub/icons-static-svg",
+    "slug": "capcut"
+   },
+   "kind": "tool"
+  },
+  "replit": {
+   "name": "Replit",
+   "aliases": [
+    "rep lit",
+    "replet"
+   ],
+   "logo": {
+    "pkg": "simple-icons",
+    "slug": "replit"
+   },
+   "kind": "tool"
+  },
+  "lovable": {
+   "name": "Lovable",
+   "aliases": [],
+   "logo": {
+    "pkg": "@lobehub/icons-static-svg",
+    "slug": "lovable"
+   },
+   "kind": "tool"
+  },
+  "v0": {
+   "name": "v0",
+   "aliases": [
+    "v zero",
+    "vee zero"
+   ],
+   "logo": {
+    "pkg": "simple-icons",
+    "slug": "v0"
+   },
+   "kind": "tool"
+  },
+  "windsurf": {
+   "name": "Windsurf",
+   "aliases": [
+    "wind surf"
+   ],
+   "logo": {
+    "pkg": "simple-icons",
+    "slug": "windsurf"
+   },
+   "kind": "tool"
+  },
+  "n8n": {
+   "name": "n8n",
+   "aliases": [
+    "n eight n",
+    "nateon",
+    "n 8 n"
+   ],
+   "logo": {
+    "pkg": "simple-icons",
+    "slug": "n8n"
+   },
+   "kind": "tool"
+  },
+  "zapier": {
+   "name": "Zapier",
+   "aliases": [
+    "zappier"
+   ],
+   "logo": {
+    "pkg": "simple-icons",
+    "slug": "zapier"
+   },
+   "kind": "tool"
+  },
+  "ollama": {
+   "name": "Ollama",
+   "aliases": [
+    "o llama",
+    "olama"
+   ],
+   "logo": {
+    "pkg": "simple-icons",
+    "slug": "ollama"
+   },
+   "kind": "tool"
+  },
+  "huggingface": {
+   "name": "Hugging Face",
+   "aliases": [
+    "huggingface"
+   ],
+   "logo": {
+    "pkg": "simple-icons",
+    "slug": "huggingface"
+   },
+   "kind": "tool"
+  },
+  "stripe": {
+   "name": "Stripe",
+   "aliases": [],
+   "logo": {
+    "pkg": "simple-icons",
+    "slug": "stripe"
+   },
+   "kind": "tool"
+  },
+  "framer": {
+   "name": "Framer",
+   "aliases": [],
+   "logo": {
+    "pkg": "simple-icons",
+    "slug": "framer"
+   },
+   "kind": "tool"
+  },
+  "webflow": {
+   "name": "Webflow",
+   "aliases": [
+    "web flow"
+   ],
+   "logo": {
+    "pkg": "simple-icons",
+    "slug": "webflow"
+   },
+   "kind": "tool"
+  },
+  "youtube": {
+   "name": "YouTube",
+   "aliases": [
+    "you tube"
+   ],
+   "logo": {
+    "pkg": "simple-icons",
+    "slug": "youtube"
+   },
+   "kind": "platform"
+  },
+  "tiktok": {
+   "name": "TikTok",
+   "aliases": [
+    "tik tok",
+    "tick tock"
+   ],
+   "logo": {
+    "pkg": "simple-icons",
+    "slug": "tiktok"
+   },
+   "kind": "platform"
+  },
+  "instagram": {
+   "name": "Instagram",
+   "aliases": [
+    "insta gram"
+   ],
+   "logo": {
+    "pkg": "simple-icons",
+    "slug": "instagram"
+   },
+   "kind": "platform"
+  }
+ }
+}
