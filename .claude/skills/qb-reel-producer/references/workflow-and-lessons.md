@@ -90,3 +90,12 @@ Each is now a rule.
 - The picture-in-picture is a second `<video>` of `aroll.mp4` with `data-media-start` equal to its `data-start`, marked `data-layout-allow-overflow`.
 - Never tween `visibility` on a `.clip`. Animate opacity on wrappers or children.
 - `hyperframes check` must show 0 errors. The "nested structure" warnings are Studio suggestions and are acceptable.
+
+## Added on the second reel ("the prompt was not the product", 8 October 2026)
+
+17. **The source was over the chat limit: 154.7 MB, 1080×1920.** It arrived through a release on the private `qb-raw` repo and was ingested at full size; ingest took 15 s and transcription 3.5 min. The speaker's own Mac was too old for Claude Code, and the session can't reach a Windows PC's drive either.
+18. **The speaker's own clip had to follow a spoken line, not a tool name.** That is now `broll` in `reel.json`, anchored to a word inside the segment.
+19. **Long sentences need several two-line captions.** The planner now splits them at the most balanced natural break, timed from word starts (`src_at`). Phrase words are taken in order from `words.json`; slicing by time dropped and duplicated words.
+20. **Noise before a late voiced onset.** A run starting 1.6 s before the word "Then" would have left dead air. Segments now start at the later of the run start and `hit` minus 0.2 s.
+21. **Outdoor handheld framing puts the mouth near y 1140.** Punch-ins are capped at 1.10 through `framing.punch`, with `pivot_y` 450.
+

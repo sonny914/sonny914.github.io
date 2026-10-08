@@ -27,7 +27,8 @@ def main(project, render):
     S, cues = tl["segments"], plan["cues"]
     srt, vtt = [], ["WEBVTT", ""]
     for n, c in enumerate(cues):
-        a = S[c["lines"][0]["seg"]]["t0"]; b = S[cues[n + 1]["lines"][0]["seg"]]["t0"] if n + 1 < len(cues) else tl["duration"]
+        st = lambda c: c["lines"][0].get("t_at") if c["lines"][0].get("t_at") is not None else S[c["lines"][0]["seg"]]["t0"]
+        a = st(c); b = st(cues[n + 1]) if n + 1 < len(cues) else tl["duration"]
         body = "\n".join(apply_text_corrections(l["text"], corr).replace("*", "") for l in c["lines"])
         srt.append(f"{n + 1}\n{ts(a)} --> {ts(b)}\n{body}\n"); vtt.append(f"{ts(a, '.')} --> {ts(b, '.')}\n{body}\n")
     (D / "captions.srt").write_text("\n".join(srt)); (D / "captions.vtt").write_text("\n".join(vtt))
@@ -41,13 +42,14 @@ def main(project, render):
                                  "words": tl["words"], "corrections": plan.get("corrections", []), "model_disagreements": src["disagreements"]})
     man = load(P / "asset-manifest.json")
     em = {"duration": tl["duration"], "tools": [], "recap": tl["recap"]}
-    rows = ["# Tools mentioned and edit map", "", f"{len({w['key'] for w in tl['windows']})} named tools.", "",
+    rows = ["# Tools mentioned and edit map", "", f"{len({w['key'] for w in tl['windows'] if w.get('kind') != 'broll'})} named tools, plus story B-roll.", "",
             "| Tool | Said at (reel) | Said at (source) | Visual on screen | Treatment | Visual used |", "|---|---|---|---|---|---|"]
     for tool, w in zip(plan["tools"], tl["windows"]):
-        seg = S[tool["seg"]]; vis = man["tools"][tool["key"]]["visual"]
+        seg = S[tool["seg"]]; vis = man["tools"].get(tool["key"], {}).get("visual") or tool["visual"]
         src_t = seg["in"] + (w["voiced"] - seg["t0"])
         desc = f"{vis.get('source')} ({'moving' if vis['kind'] == 'footage' else 'still mark'})"
-        rows.append(f"| {tool['name']} | {w['voiced']:.2f}s | {src_t:.2f}s | {w['in']:.2f}–{w['out']:.2f}s | {FORMAT[tool['treatment']]} | {desc} |")
+        name = tool["name"] + (" (story B-roll)" if tool.get("kind") == "broll" else "")
+        rows.append(f"| {name} | {w['voiced']:.2f}s | {src_t:.2f}s | {w['in']:.2f}–{w['out']:.2f}s | {FORMAT[tool['treatment']]} | {desc} |")
         em["tools"].append({"tool": tool["name"], "spoken_at_reel": w["voiced"], "spoken_at_source": round(src_t, 2), "visual_in": w["in"],
                             "visual_out": w["out"], "hold_under_wipe": w["hold"], "format": tool["treatment"], "visual": vis.get("source")})
     if tl["recap"]:
@@ -63,6 +65,10 @@ def main(project, render):
             win = f" {v.get('start', 0)}–{v.get('end') or 'end'}s"
             a.append(f"| {t['name']} footage{win} | {t['name']} B-roll | {v['source']} | {v['owner']} | {v['license']} |")
         a.append(f"| {t['name']} mark | {'Split screen and recap' if v['kind'] == 'mark' else 'Recap'} | {t['mark']['source']} | {t['mark']['owner']} | {t['mark']['license']} |")
+    for tool in plan["tools"]:
+        if tool.get("kind") == "broll":
+            v = tool["visual"]
+            a.append(f"| {tool['name']} {v.get('start', 0)}–{v.get('end') or 'end'}s | Story B-roll | {v.get('source')} | {v.get('owner')} | {v.get('license')} |")
     for s in man["shared"].values():
         a.append(f"| {s['file']} | Composition | {s['source']} | {s['owner']} | {s['license']} |")
     mus = plan.get("audio", {}).get("music")

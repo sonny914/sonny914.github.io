@@ -29,7 +29,8 @@ def main(project):
                 sys.exit(f"{tool['name']}: clean window {end-start:.2f}s is too short for a {need:.2f}s slot even at 0.75x")
             print(f"{tool['name']}: slowed to {rate:.2f}x to fill {need:.2f}s")
         take = min(end - start, need * rate + 0.05)
-        vf = f"setpts=PTS/{rate:.4f},crop={v['crop']},scale={W}:{H}:flags=lanczos,fps={FPS},format=yuv420p"
+        vf = (f"setpts=PTS/{rate:.4f},{v['filter']},fps={FPS},format=yuv420p" if v.get("filter") else
+              f"setpts=PTS/{rate:.4f},crop={v['crop']},scale={W}:{H}:flags=lanczos,fps={FPS},format=yuv420p")
         out = P / f"assets/media/ins-{tool['key']}.mp4"
         ff("-ss", f"{start:.3f}", "-t", f"{take:.3f}", "-i", src, "-vf", vf, "-an", "-c:v", "libx264", "-crf", "12", "-g", "30", "-keyint_min", "30", out)
         v["clip"] = str(out.relative_to(P))

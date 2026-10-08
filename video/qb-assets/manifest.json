@@ -56,6 +56,15 @@
     "owner": "official (product owner)",
     "license": "CC0-1.0 (collection); mark is a trademark of its owner, used to identify the product"
    }
+  },
+  "claude": {
+   "name": "Claude",
+   "mark": {
+    "file": "tools/claude/mark.svg",
+    "source": "npm simple-icons@16.33.0 icons/claude.svg",
+    "owner": "official (product owner)",
+    "license": "CC0-1.0 (collection); mark is a trademark of its owner, used to identify the product"
+   }
   }
  }
 }

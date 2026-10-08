@@ -37,6 +37,23 @@ def emphasize(text, tools, extra):
     return out.replace("**", "")
 
 
+def chunk_words(ws, limit):
+    """Split a long phrase into caption chunks of <= limit characters at the most balanced natural
+    break: after punctuation or before a conjunction scores best, then equal length."""
+    text = lambda xs: " ".join(x["w"] for x in xs)
+    if len(text(ws)) <= limit or len(ws) < 2:
+        return [ws]
+    best = None
+    for k in range(1, len(ws)):
+        a, b = text(ws[:k]), text(ws[k:])
+        score = abs(len(a) - len(b))
+        if re.search(r"[,;:.]$", ws[k - 1]["w"]): score -= 14
+        if ws[k]["w"].lower() in ("and", "but", "or", "so", "then", "like", "because", "casually", "to"): score -= 8
+        if best is None or score < best[0]: best = (score, k)
+    k = best[1]
+    return chunk_words(ws[:k], limit) + chunk_words(ws[k:], limit)
+
+
 def main(project):
     P = Path(project)
     phrases = load(P / "transcript/phrases.json")
@@ -57,8 +74,9 @@ def main(project):
         mark = last["text"][-1] if last["text"][-1] in ",.?!" else ""
         is_tool = bool(last["tools"]) and len(last["words"]) <= 3
         pause = 0.9 if n == len(groups) - 1 else (PAUSE["tool"] if is_tool else PAUSE[mark])
+        start = max(first["on"], first.get("hit", first["on"]) - 0.2)   # ignore breath/noise before a late onset
         segs.append({"text": apply_text_corrections(" ".join(phrases[i]["text"] for i in g), corrections), "phrases": g,
-                     "in": snap(max(0, first["on"] - 0.05)), "out": snap(last["off"] + pause),
+                     "in": snap(max(0, start - 0.05)), "out": snap(last["off"] + pause),
                      "tools": sorted({t for i in g for t in phrases[i]["tools"]})})
     # 2. tools -> windows, visuals, treatments
     lx = {k: v for k, v in manifest["tools"].items()}
@@ -79,14 +97,24 @@ def main(project):
             tools.append({"key": key, "name": lx[key]["name"], "seg": si, "until_seg": until,
                           "treatment": treat, "visual": v})
             last_t = treat
+    # story B-roll: the speaker's own clips anchored to a phrase ("use this clip when I say ...")
+    for b in prev.get("broll", []):
+        si = next((i for i, s in enumerate(segs) if b["match"].lower() in s["text"].lower()), None)
+        if si is None:
+            print(f"  B-roll '{b['name']}': phrase not found: {b['match']!r}"); continue
+        tools.append({"key": b["key"], "name": b["name"], "kind": "broll", "seg": si, "until_seg": si,
+                      "start_word": b["match"].split()[0], "treatment": b.get("treatment", "full"),
+                      "visual": {"kind": "footage", **{k: b[k] for k in ("src", "start", "end", "filter", "crop", "rate",
+                                                                         "source", "owner", "license") if k in b}}})
+    tools.sort(key=lambda t: (t["seg"], t.get("kind") == "broll"))
     # the full-screen treatments alternate between full+pip and full
-    fulls = [t for t in tools if t["visual"]["kind"] == "footage"]
+    fulls = [t for t in tools if t["visual"]["kind"] == "footage" and t.get("kind") != "broll"]
     for k, t in enumerate(fulls): t["treatment"] = "full+pip" if k % 2 == 0 else "full"
-    splits = [t for t in tools if t["visual"]["kind"] != "footage"]
+    splits = [t for t in tools if t["visual"]["kind"] != "footage" and t.get("kind") != "broll"]
     for k, t in enumerate(splits): t["treatment"] = "split-left" if k % 2 == 0 else "split-right"
     # 3. recap
     recap = None
-    if len(tools) >= 3:
+    if len([t for t in tools if t.get("kind") != "broll"]) >= 3:
         after = tools[-1]["until_seg"] + 1
         for si in range(after, len(segs)):
             if RECAP_WORDS.search(segs[si]["text"]):
@@ -96,7 +124,11 @@ def main(project):
                 recap = {"seg": si, "line_seg": end, "until_seg": end}
                 break
     # 4. captions: tool name + following function line share a cue; long lines split
-    names = [t["name"] for t in tools]
+    allw = load(P / "transcript/words.json")
+    words_by_phrase, ptr = [], 0          # phrases are consecutive runs of words.json
+    for p in phrases:
+        words_by_phrase.append(allw[ptr:ptr + len(p["words"])]); ptr += len(p["words"])
+    names = [t["name"] for t in tools if t.get("kind") != "broll"]
     cues, si = [], 0
     while si < len(segs):
         t = next((t for t in tools if t["seg"] == si), None)
@@ -112,12 +144,22 @@ def main(project):
                 and not (recap and si + 1 == recap["seg"])):
             cues.append({"lines": [{"seg": si, "text": emphasize(segs[si]["text"], names, emphasis)},
                                    {"seg": si + 1, "text": emphasize(segs[si + 1]["text"], names, emphasis)}]}); si += 2; continue
+        if len(segs[si]["text"]) > 60:   # more than two lines: split into cues at word times
+            ws = [w for i in segs[si]["phrases"] for w in words_by_phrase[i]]
+            for chunk in chunk_words(ws, 60):
+                txt = apply_text_corrections(" ".join(w["w"] for w in chunk), corrections)
+                line = {"seg": si, "text": emphasize(txt, names, emphasis)}
+                if chunk[0] is not ws[0]: line["src_at"] = chunk[0]["s"]
+                cues.append({"lines": [line]})
+            si += 1; continue
         cues.append({"lines": [{"seg": si, "text": emphasize(segs[si]["text"], names, emphasis)}]}); si += 1
     # 5. framing: restrained punch-ins on talking-head segments, pivot on the cap line
     covered = set()
-    for t in tools: covered.update(range(t["seg"], t["until_seg"] + 1))
+    for t in tools:
+        if not t.get("start_word"):   # B-roll that starts mid-segment leaves the segment's opening on the face
+            covered.update(range(t["seg"], t["until_seg"] + 1))
     if recap: covered.update(range(recap["seg"], recap["until_seg"] + 1))
-    pattern = [(1.0, 1.035), (1.12, 1.14), (1.02, 1.04), (1.13, 1.15)]
+    pattern = [tuple(x) for x in prev.get("framing", {}).get("punch", [(1.0, 1.035), (1.12, 1.14), (1.02, 1.04), (1.13, 1.15)])]
     moves, k = [], 0
     for i in range(len(segs)):
         if i in covered: continue
@@ -128,7 +170,10 @@ def main(project):
         "emphasis": emphasis, "corrections": corrections,
         "segments": [{k2: v for k2, v in s.items() if k2 != "tools"} for s in segs],
         "cues": cues, "tools": tools, "recap": recap,
-        "framing": {"pivot_y": prev.get("framing", {}).get("pivot_y", 400),
+        "broll": prev.get("broll", []),
+        "framing": {"pivot_y": prev.get("framing", {}).get("pivot_y", 400), "punch": [list(x) for x in pattern],
+                    "split_shift": prev.get("framing", {}).get("split_shift", 235),
+                    "split_scale": prev.get("framing", {}).get("split_scale", 1.0),
                     "caption_top": prev.get("framing", {}).get("caption_top", 1330), "moves": moves},
         "audio": prev.get("audio", {"voice_lufs": -15, "music": {"kind": "synth", "lufs": -31},
                                      "sfx": {"full": "whoosh", "split": "click", "recap": "pop"}}),

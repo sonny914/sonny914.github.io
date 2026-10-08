@@ -41,15 +41,29 @@ def build(project):
     wins = []
     for k, tl in enumerate(tools):
         a, b = segs[tl["seg"]]["t0"], segs[tl["until_seg"]]["t1"]
+        voiced = segs[tl["seg"]]["hit_t"]
+        if tl.get("start_word"):
+            sw = re.sub(r"[^a-z0-9']", "", tl["start_word"].lower())
+            hit = next((w for w in mapped if segs[tl["seg"]]["t0"] <= w["t"] < b and re.sub(r"[^a-z0-9']", "", w["w"].lower()) == sw), None)
+            if hit:
+                voiced = hit["t"]; a = round(max(segs[tl["seg"]]["t0"], hit["t"] - 0.05), 3)
         nxt = tools[k + 1] if k + 1 < len(tools) else None
-        wipe_next = bool(nxt and nxt["treatment"].startswith("full") and abs(segs[nxt["seg"]]["t0"] - b) < 0.01)
+        wipe_next = bool(nxt and nxt["treatment"].startswith("full") and not nxt.get("start_word")
+                         and abs(segs[nxt["seg"]]["t0"] - b) < 0.01)
         wins.append({"key": tl["key"], "name": tl["name"], "treatment": tl["treatment"], "in": round(a, 3), "out": round(b, 3),
-                     "hold": round(b + WIPE_COVER, 3) if wipe_next else round(b, 3), "voiced": segs[tl["seg"]]["hit_t"]})
+                     "hold": round(b + WIPE_COVER, 3) if wipe_next else round(b, 3), "voiced": voiced,
+                     "kind": tl.get("kind", "tool")})
     recap = plan.get("recap")
     rwin = None
     if recap:
         rwin = {"in": segs[recap["seg"]]["t0"], "out": segs[recap["until_seg"]]["t1"],
                 "line": segs[recap["line_seg"]]["hit_t"], "voiced": segs[recap["seg"]]["hit_t"]}
+    def to_reel(src):
+        s = next((s for s in segs if s["in"] - 0.15 <= src < s["out"]), None)
+        return round(s["t0"] + max(0, src - s["in"]), 3) if s else None
+    for c in plan.get("cues", []):
+        for l in c["lines"]:
+            if "src_at" in l: l["t_at"] = to_reel(l["src_at"])
     tl_ = {"duration": dur, "segments": segs, "words": mapped, "windows": wins, "recap": rwin}
     save(P / "build/timeline.json", tl_)
     return plan, tl_

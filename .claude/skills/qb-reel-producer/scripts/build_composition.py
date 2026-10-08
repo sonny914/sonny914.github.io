@@ -43,18 +43,20 @@ def main(project):
         shutil.copy2(SKILL / "assets/hyperframes.json", P / "hyperframes.json")
 
     def t0(i): return round(S[i]["t0"], 3)
+    def cue_start(c):
+        l = c["lines"][0]; return l["t_at"] if l.get("t_at") is not None else t0(l["seg"])
     def t1(i): return round(S[i]["t1"], 3)
     def hit(i): return round(S[i]["hit_t"], 3)
 
     # captions
     cues = plan["cues"]; cue_html, cue_js = [], []
     for n, cue in enumerate(cues):
-        lines = cue["lines"]; start = t0(lines[0]["seg"])
-        stop = t0(cues[n + 1]["lines"][0]["seg"]) if n + 1 < len(cues) else DUR
+        lines = cue["lines"]; start = cue_start(cue)
+        stop = cue_start(cues[n + 1]) if n + 1 < len(cues) else DUR
         spans = "".join(f'<span class="ln" id="c{n}l{k}">{fmt(apply_text_corrections(l["text"], corr))}</span>' for k, l in enumerate(lines))
         cue_html.append(f'<div id="cue{n}" class="clip cue" data-start="{start}" data-duration="{round(stop - start, 3)}" data-track-index="20"><div class="plate">{spans}</div></div>')
         for k, l in enumerate(lines):
-            at = start if k == 0 else hit(l["seg"])
+            at = start if k == 0 else (l["t_at"] if l.get("t_at") is not None else hit(l["seg"]))
             if k > 0:
                 cue_js += [f'tl.set("#c{n}l{k}", {{display: "none"}}, 0);', f'tl.set("#c{n}l{k}", {{display: "block"}}, {at});']
             cue_js.append(f'tl.fromTo("#c{n}l{k}", {{opacity: {0.45 if k == 0 else 0}, y: 8}}, {{opacity: 1, y: 0, duration: 0.14, ease: "power2.out"}}, {at});')
@@ -69,23 +71,26 @@ def main(project):
         key, a, b, hold, form = f'{tool["key"]}{n}', w["in"], w["out"], w["hold"], tool["treatment"]
         if form.startswith("split"):
             side = "left" if form == "split-left" else "right"
-            dx = 235 if side == "left" else -235
+            shift = plan["framing"].get("split_shift", 235)   # how far the speaker slides aside
+            split_scale = plan["framing"].get("split_scale", 1.0)  # < 1 keeps a close face whole beside the column
+            dx = shift if side == "left" else -shift
             clip0 = "inset(0 100% 0 0)" if side == "left" else "inset(0 0 0 100%)"
             ins_html.append(f'<div id="col-{key}" class="col {side}"><div class="col-inner"><svg class="mark" viewBox="0 0 24 24" aria-hidden="true"><path d="{mark_path(P, tool["key"])}"/></svg>{label(tool["name"])}</div></div>')
             ins_js += [f'tl.set("#col-{key}", {{opacity: 1}}, {a});',
                        f'tl.fromTo("#col-{key}", {{clipPath: "{clip0}"}}, {{clipPath: "inset(0 0% 0 0%)", duration: 0.24, ease: "power3.out"}}, {a});',
-                       f'tl.fromTo("#aroll-wrap", {{x: 0}}, {{x: {dx}, duration: 0.28, ease: "power3.out", immediateRender: false}}, {a});',
+                       f'tl.set("#aroll-wrap", {{transformOrigin: "540px 0px"}}, {a});',
+                       f'tl.fromTo("#aroll-wrap", {{x: 0, scale: 1}}, {{x: {dx}, scale: {split_scale}, duration: 0.28, ease: "power3.out", immediateRender: false}}, {a});',
                        f'tl.fromTo("#col-{key} .mark", {{scale: 0.94}}, {{scale: 1, duration: {round(b - a, 2)}, ease: "sine.out"}}, {a});',
                        f'tl.fromTo("#col-{key} .label", {{opacity: 0, x: {-16 if side == "left" else 16}}}, {{opacity: 1, x: 0, duration: 0.2, ease: "power2.out"}}, {round(a + 0.12, 3)});',
-                       f'tl.set("#col-{key}", {{opacity: 0}}, {hold});', f'tl.set("#aroll-wrap", {{x: 0}}, {hold});']
+                       f'tl.set("#col-{key}", {{opacity: 0}}, {hold});', f'tl.set("#aroll-wrap", {{x: 0, scale: 1, transformOrigin: "540px {pivot}px"}}, {hold});']
             sfx.append((sfx_map.get("split"), a, 0.3))
         else:
             clip = tool["visual"]["clip"]; d = round(hold - a, 3)
-            ins_html.append(f'<div id="ins-{key}-wrap" class="ins"><video id="ins-{key}" class="clip" src="{clip}" data-start="{a}" data-duration="{d}" data-track-index="2" muted playsinline></video>{label(tool["name"], "on-full")}</div>')
+            ins_html.append(f'<div id="ins-{key}-wrap" class="ins"><video id="ins-{key}" class="clip" src="{clip}" data-start="{a}" data-duration="{d}" data-track-index="2" muted playsinline></video>{"" if tool.get("kind") == "broll" else label(tool["name"], "on-full")}</div>')
             ins_js += [f'tl.set("#ins-{key}-wrap", {{opacity: 1}}, {a});',
                        f'tl.fromTo("#ins-{key}-wrap", {{clipPath: "inset(0 0 100% 0)"}}, {{clipPath: "inset(0 0 0% 0)", duration: 0.2, ease: "power3.out"}}, {a});',
                        f'tl.fromTo("#ins-{key}-wrap video", {{scale: 1.0}}, {{scale: 1.05, duration: {d}, ease: "none"}}, {a});',
-                       f'tl.fromTo("#ins-{key}-wrap .label", {{opacity: 0, y: 12}}, {{opacity: 1, y: 0, duration: 0.2, ease: "power2.out"}}, {round(a + 0.1, 3)});',
+                       *([] if tool.get("kind") == "broll" else [f'tl.fromTo("#ins-{key}-wrap .label", {{opacity: 0, y: 12}}, {{opacity: 1, y: 0, duration: 0.2, ease: "power2.out"}}, {round(a + 0.1, 3)});']),
                        f'tl.set("#ins-{key}-wrap", {{opacity: 0}}, {hold});']
             sfx.append((sfx_map.get("full"), round(a - 0.06, 3), 0.55))
             if form == "full+pip":
@@ -98,7 +103,7 @@ def main(project):
     if rw:
         seen, rows = set(), []
         for tool in plan["tools"]:
-            if tool["key"] in seen: continue
+            if tool["key"] in seen or tool.get("kind") == "broll": continue
             seen.add(tool["key"]); rows.append(tool)
         rows_html = "".join(f'<div class="row" id="row{i}"><svg class="mark" viewBox="0 0 24 24" aria-hidden="true"><path d="{mark_path(P, t["key"])}"/></svg><span>{html.escape(t["name"])}</span></div>' for i, t in enumerate(rows))
         recap_html = f'<div id="recap"><div id="stack"><div id="stackline" style="height:{len(rows) * 132 - 36}px"></div>{rows_html}</div></div>'

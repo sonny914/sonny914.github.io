@@ -16,6 +16,7 @@ python3 .claude/skills/qb-reel-producer/scripts/qb_reel.py new "<video>" --name 
 
 - **Setup runs by itself.** If the models are missing, `setup_env.sh` runs first. It is a one-time download from the official sherpa-onnx GitHub releases; afterwards the cached models are reused, never reinstalled.
 - **Where it runs.** The project is created in `video/reels/<slug>/`, which is git-ignored. The command ends with `renders/pass1.mp4` and `verify/report.md`.
+- **Files over 30 MB.** Chat attachments are capped at 30 MB, and this cloud session can't see the speaker's computer. Have the speaker upload the original to a release on the private repo `sonny914/qb-raw` from Safari (`github.com/sonny914/qb-raw/releases/new`). Then attach that repo with `add_repo`, read the asset's name and size through `gh api repos/sonny914/qb-raw/releases`, and download it at full size. The built-in `gh` refuses GitHub's file-host redirect, so a private asset needs the repo made public for the download, or a git-based handoff. The first proven run, a 154.7 MB file on 8 Oct 2026, went through briefly public; the repo went straight back to private afterwards.
 - **Recordings mapped with `--footage`** are the first choice of visual for that tool. If you don't know the clean window yet, omit `@start-end`, look at `work/broll-<tool>.png`, then set `start`, `end` and `crop` in `reel.json`.
 
 ## What the steps do
@@ -45,6 +46,22 @@ python3 .claude/skills/qb-reel-producer/scripts/qb_reel.py new "<video>" --name 
    - caption length and treatment variety
    It also writes `sweep.png`, `boundaries.png` and `phone.png`.
 7. **`deliver.py`** writes the deliverables: the MP4, `transcript.txt`, `captions.srt` and `.vtt`, `transcript.json`, `tools-and-edit-map.md`, `edit-map.json`, `ASSETS.md`, and a project zip under 30 MB.
+
+## Story B-roll and per-reel framing
+
+These are set in `reel.json`, then applied with `qb_reel.py replan <project>` followed by `rebuild`.
+
+- **`broll`** holds the speaker's own clips tied to a spoken line, such as "use this clip when I say the legs look laid off". Each entry has:
+  - `key`, `name`
+  - `match`: the spoken words; the visual starts on the first one
+  - `src`: the clip copied into `assets/media/`
+  - `start` and `end`: the clean window
+  - either `crop`, or a full ffmpeg `filter` that outputs 1080×1920
+  - `source`, `owner`, `license`, and `treatment` (default `full`)
+
+  Story B-roll gets no tool label, stays out of the recap, and is credited in `ASSETS.md`. For landscape clips, a following square crop padded onto ink keeps the subject large, as in the "prompt was not the product" reel.
+- **`framing.punch`** sets the punch-in pairs, such as `[[1.0,1.03],[1.08,1.10]]`. Keep them at 1.10 or below for handheld or low-mouth framing, so the face never reaches the captions.
+- **`framing.pivot_y`** sets the cap line the punch-ins pivot on.
 
 ## Your job between commands
 
