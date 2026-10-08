@@ -24,6 +24,17 @@ def main(project, render):
     slug = re.sub(r"[^a-z0-9]+", "-", ("qb-" + plan.get("title", P.name)).lower()).strip("-")
     corr = plan.get("corrections")
     ff("-i", render, "-c", "copy", "-movflags", "+faststart", D / f"{slug}.mp4")
+    # share copy under the 30 MB chat limit: two-pass H.264 sized to ~28 MB (~3.5-8 Mbps is normal for Reels)
+    master = D / f"{slug}.mp4"
+    if master.stat().st_size > 29e6:
+        kbps = int(28e6 * 8 / 1000 / tl["duration"]) - 192
+        share = D / f"{slug}-share.mp4"
+        common = ["-c:v", "libx264", "-preset", "slow", "-b:v", f"{kbps}k", "-maxrate", f"{int(kbps * 1.5)}k", "-bufsize", f"{kbps * 2}k",
+                  "-pix_fmt", "yuv420p", "-passlogfile", str(D / "x264pass")]
+        ff("-i", master, *common, "-pass", "1", "-an", "-f", "mp4", "/dev/null")
+        ff("-i", master, *common, "-pass", "2", "-c:a", "aac", "-b:a", "160k", "-movflags", "+faststart", share)
+        for f in D.glob("x264pass*"): f.unlink()
+        print(f"share copy {share.name}: {share.stat().st_size / 1e6:.1f} MB at {kbps} kbps")
     S, cues = tl["segments"], plan["cues"]
     srt, vtt = [], ["WEBVTT", ""]
     for n, c in enumerate(cues):
@@ -42,7 +53,7 @@ def main(project, render):
                                  "words": tl["words"], "corrections": plan.get("corrections", []), "model_disagreements": src["disagreements"]})
     man = load(P / "asset-manifest.json")
     em = {"duration": tl["duration"], "tools": [], "recap": tl["recap"]}
-    rows = ["# Tools mentioned and edit map", "", f"{len({w['key'] for w in tl['windows'] if w.get('kind') != 'broll'})} named tools, plus story B-roll.", "",
+    rows = ["# Tools mentioned and edit map", "", (lambda n, b: f"{n} named tool{'s' if n != 1 else ''}" + (", plus story B-roll." if b else "."))(len({w['key'] for w in tl['windows'] if w.get('kind') != 'broll'}), any(w.get('kind') == 'broll' for w in tl['windows'])), "",
             "| Tool | Said at (reel) | Said at (source) | Visual on screen | Treatment | Visual used |", "|---|---|---|---|---|---|"]
     for tool, w in zip(plan["tools"], tl["windows"]):
         seg = S[tool["seg"]]; vis = man["tools"].get(tool["key"], {}).get("visual") or tool["visual"]
@@ -64,7 +75,7 @@ def main(project, render):
         if v["kind"] == "footage":
             win = f" {v.get('start', 0)}–{v.get('end') or 'end'}s"
             a.append(f"| {t['name']} footage{win} | {t['name']} B-roll | {v['source']} | {v['owner']} | {v['license']} |")
-        a.append(f"| {t['name']} mark | {'Split screen and recap' if v['kind'] == 'mark' else 'Recap'} | {t['mark']['source']} | {t['mark']['owner']} | {t['mark']['license']} |")
+        a.append(f"| {t['name']} mark | {('Split screen' + (' and recap' if tl['recap'] else '')) if v['kind'] == 'mark' else ('Recap' if tl['recap'] else 'Not shown')} | {t['mark']['source']} | {t['mark']['owner']} | {t['mark']['license']} |")
     for tool in plan["tools"]:
         if tool.get("kind") == "broll":
             v = tool["visual"]
